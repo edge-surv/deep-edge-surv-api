@@ -1,0 +1,1 @@
+{"cameras": {"1": {"id": "1122", "host": "192.168.1.108", "port": 554, "username": "admin", "password": "edgesurv00000000", "provider": "dahua", "name": "Front Room"}}, "camera_settings": {"1": {"camera_id": "1122", "detection_objects": ["person", "dog"], "day": "Monday", "active_from": "20:00", "active_to": "04:00", "enabled": true}}}
