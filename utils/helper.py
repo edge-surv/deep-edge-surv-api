@@ -49,3 +49,23 @@ def get_connected_subnet():
     return None
 
 
+# generate labels
+def generate_labels(filtered_detections, tracking_enabled: bool, tracker):
+    # check if tracking is enabled and update detections with tracker
+    if tracking_enabled:
+        tracked_detections = tracker.update_with_detections(filtered_detections)
+
+        labels = [f"{class_name} #{tracker_id}" for class_name, tracker_id in
+                  zip(tracked_detections["class_name"], tracked_detections.tracker_id)]
+
+        return labels, tracked_detections
+
+    else:
+
+        labels = [
+            f"{class_name} {confidence:.2f}"
+            for class_name, confidence
+            in zip(filtered_detections['class_name'], filtered_detections.confidence)
+        ]
+
+        return labels, filtered_detections
