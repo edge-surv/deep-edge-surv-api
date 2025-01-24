@@ -2,6 +2,7 @@ import random
 
 import cv2
 import supervision as sv
+from supervision.geometry.core import Point
 from fastapi import APIRouter, status, Response
 from starlette.responses import StreamingResponse
 from ultralytics import YOLO
@@ -13,6 +14,14 @@ from utils import generate_stream_url, generate_trackers
 broker = MQTTBroker()
 
 streaming_router = APIRouter()
+
+VIDEO_SRC_PATH = "src_videos/people-walking.mp4"
+
+LINE_START = Point(50, 1500)
+LINE_END = Point(3790, 1500)
+
+
+# VIDEO_SRC_PATH = 0
 
 
 @streaming_router.get("/{camera_id}/surveillance")
@@ -46,40 +55,35 @@ async def live_ai_surveillance(camera_id: str):
 
     model = YOLO("ai/yolov8n.pt")
     model.fuse()
+    # annotations
     box_annotator = sv.BoxAnnotator()
     label_annotator = sv.LabelAnnotator()
+    line_zone_annotator = sv.LineZoneAnnotator(
+        thickness=4,
+        text_thickness=4,
+        text_scale=2,)
+    # tracking
     tracker = sv.ByteTrack()
     tracker.reset()
 
+    # counting
+    line_zone = sv.LineZone(start=LINE_START, end=LINE_END)
+
     # start the video capturing
 
+    frames_generator = sv.get_video_frames_generator(VIDEO_SRC_PATH)
 
-    cap = cv2.VideoCapture("src_videos/people-walking.mp4")
-
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-
-    if not cap.isOpened():
-        response = {
-            'found': False
-        }
-        return Response(response, status_code=status.HTTP_404_NOT_FOUND)
     # start the video recording
 
-    video_info = sv.VideoInfo(frame_width, frame_height, fps)
+    video_info = sv.VideoInfo.from_video_path(VIDEO_SRC_PATH)
 
     def generate():
-        with sv.VideoSink(f"output/{random.randint(0, 100)}.mp4", video_info) as sink:
-            while True:
+        # filename should match the camera_id and the dates to
 
-                ret, frame = cap.read()
-                # Break the loop if the video ends or cannot fetch the frame
-                if not ret:
-                    print("End of video or cannot fetch frame.")
-                    cap.release()
-                    break
-                # Run YOLO detection on the frame
+        with sv.VideoSink(f"output/{random.randint(0, 100)}.mp4", video_info) as sink:
+            # Run YOLO detection on the frame
+
+            for frame in frames_generator:
                 results = model.predict(frame, conf=minimum_conf, iou=0.45)[0]
 
                 detections = sv.Detections.from_ultralytics(results)
@@ -102,6 +106,13 @@ async def live_ai_surveillance(camera_id: str):
                 labelled_frame = label_annotator.annotate(
                     scene=annotated_frame, detections=tracked_detections, labels=labels)
 
+
+                labelled_frame = line_zone_annotator.annotate(labelled_frame, line_counter=line_zone,)
+
+                # trigger the detections for counting
+
+                line_zone.trigger(tracked_detections)
+
                 # save the file
 
                 sink.write_frame(labelled_frame)
@@ -110,6 +121,5 @@ async def live_ai_surveillance(camera_id: str):
                 if ret:
                     # Yield each JPEG frame as part of the stream
                     yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
-
 
     return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")

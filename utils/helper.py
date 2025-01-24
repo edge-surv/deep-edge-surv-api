@@ -87,8 +87,8 @@ def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
         return labels, filtered_detections
 
 
-# save the video to path
-def save_ai_surveillance_video():
+# generate counts for objects detected in a frame
+def generate_count():
     """
 
     :return:
