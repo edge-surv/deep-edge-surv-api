@@ -24,7 +24,15 @@ class Camera(BaseModel):
 class Settings(BaseModel):
     detection_objects: List[str]
     enabled: bool
-    minimum_confidence: int
+    minimum_confidence: int | float
     enable_tracking: bool
-    enable_segmentation: bool
     enable_counting: bool
+
+
+class Storage(BaseModel):
+    id: str
+    camera_id: str
+    camera_name: str
+    filename: str
+    date: str
+    time: str

@@ -81,9 +81,8 @@ This API provides functionality for managing cameras, settings, and AI-powered s
   - **Schema**: `Settings`
     - `detection_objects` (array of strings) - Required.
     - `enabled` (boolean) - Required.
-    - `minimum_confidence` (integer) - Required.
+    - `minimum_confidence` (integer or float) - Required.
     - `enable_tracking` (boolean) - Required.
-    - `enable_segmentation` (boolean) - Required.
     - `enable_counting` (boolean) - Required.
 - **Responses**:
   - `200`: Settings updated successfully.
