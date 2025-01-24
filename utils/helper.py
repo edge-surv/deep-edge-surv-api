@@ -3,6 +3,10 @@ import socket
 
 import nmap
 import psutil
+from datetime import datetime
+from db import storage_table
+import uuid
+from models import Storage
 
 
 # generate camera urls
@@ -95,3 +99,33 @@ def generate_count():
     """
 
     pass
+
+
+def save_footage(camera):
+    """
+    :param camera: Camera from models
+    :return: Tuple[bool, str|None]
+    """
+    file_id = str(uuid.uuid4())
+    filename = f"{file_id}_{datetime.now().date()}.mp4"
+
+    storage = {
+        "id": file_id,
+        "camera_id": camera["id"],
+        "camera_name": camera["name"],
+        "filename": filename,
+        "date": str(datetime.now().date()),
+        "time": str(datetime.now().time())
+
+    }
+
+    storage_data = Storage(**storage)
+
+    if storage_data:
+        storage_table.insert(storage_data.model_dump())
+
+        return True, filename
+
+    else:
+
+        return False, None

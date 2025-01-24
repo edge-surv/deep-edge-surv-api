@@ -9,7 +9,7 @@ from ultralytics import YOLO
 
 from broker import MQTTBroker
 from db import camera_table, DBQuery, settings_table
-from utils import generate_stream_url, generate_trackers
+from utils import generate_stream_url, generate_trackers, save_footage
 
 broker = MQTTBroker()
 
@@ -17,8 +17,8 @@ streaming_router = APIRouter()
 
 VIDEO_SRC_PATH = "src_videos/people-walking.mp4"
 
-LINE_START = Point(50, 1500)
-LINE_END = Point(3790, 1500)
+LINE_START = Point(10, 500)
+LINE_END = Point(2000, 500)
 
 
 # VIDEO_SRC_PATH = 0
@@ -61,7 +61,7 @@ async def live_ai_surveillance(camera_id: str):
     line_zone_annotator = sv.LineZoneAnnotator(
         thickness=4,
         text_thickness=4,
-        text_scale=2,)
+        text_scale=2, )
     # tracking
     tracker = sv.ByteTrack()
     tracker.reset()
@@ -77,10 +77,19 @@ async def live_ai_surveillance(camera_id: str):
 
     video_info = sv.VideoInfo.from_video_path(VIDEO_SRC_PATH)
 
-    def generate():
-        # filename should match the camera_id and the dates to
+    # generate the filename and save it to the database
+    footage_saved, filename = save_footage(camera)
 
-        with sv.VideoSink(f"output/{random.randint(0, 100)}.mp4", video_info) as sink:
+    if not footage_saved and filename is None:
+        response = {
+            "storage": False,
+            "message": "Could not save footage",
+        }
+        return Response(response, status_code=400)
+
+    def generate():
+
+        with sv.VideoSink(f"output/{filename}", video_info) as sink:
             # Run YOLO detection on the frame
 
             for frame in frames_generator:
@@ -106,8 +115,7 @@ async def live_ai_surveillance(camera_id: str):
                 labelled_frame = label_annotator.annotate(
                     scene=annotated_frame, detections=tracked_detections, labels=labels)
 
-
-                labelled_frame = line_zone_annotator.annotate(labelled_frame, line_counter=line_zone,)
+                labelled_frame = line_zone_annotator.annotate(labelled_frame, line_counter=line_zone, )
 
                 # trigger the detections for counting
 

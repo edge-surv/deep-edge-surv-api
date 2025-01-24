@@ -1,1 +1,31 @@
-{"cameras": {"1": {"id": "1122", "host": "192.168.1.108", "port": 554, "username": "admin", "password": "edgesurv00000000", "provider": "dahua", "name": "Front Room"}}, "camera_settings": {"1": {"camera_id": "1122", "detection_objects": ["person", "dog"], "day": "Monday", "active_from": "20:00", "active_to": "04:00", "enabled": true}}}
+{
+  "cameras": {
+    "1": {
+      "id": "1122",
+      "host": "192.168.1.108",
+      "port": 554,
+      "username": "admin",
+      "password": "edgesurv00000000",
+      "provider": "dahua",
+      "name": "Front Room"
+    }
+  },
+  "storage": {
+    "1": {
+      "id": "a6f84e7b-a4c7-489e-b1cc-35ce457bdbd3",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "a6f84e7b-a4c7-489e-b1cc-35ce457bdbd3_2025-01-24",
+      "date": "2025-01-24",
+      "time": "23:30:44.610037"
+    },
+    "2": {
+      "id": "27b5d913-351a-4cd1-9758-27db4ca4ee8b",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "27b5d913-351a-4cd1-9758-27db4ca4ee8b_2025-01-24.mp4",
+      "date": "2025-01-24",
+      "time": "23:32:11.114091"
+    }
+  }
+}
