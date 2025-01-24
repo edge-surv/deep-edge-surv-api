@@ -1,14 +1,12 @@
-import random
-
 import cv2
 import supervision as sv
-from supervision.geometry.core import Point
-from fastapi import APIRouter, status, Response
+from fastapi import APIRouter, Response
 from starlette.responses import StreamingResponse
+from supervision.geometry.core import Point
 from ultralytics import YOLO
 
 from broker import MQTTBroker
-from db import camera_table, DBQuery, settings_table
+from db import camera_table, DBQuery
 from utils import generate_stream_url, generate_trackers, save_footage
 
 broker = MQTTBroker()
@@ -114,8 +112,6 @@ async def live_ai_surveillance(camera_id: str):
 
                 labelled_frame = label_annotator.annotate(
                     scene=annotated_frame, detections=tracked_detections, labels=labels)
-
-                labelled_frame = line_zone_annotator.annotate(labelled_frame, line_counter=line_zone, )
 
                 # trigger the detections for counting
 
