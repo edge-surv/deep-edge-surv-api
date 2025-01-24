@@ -7,6 +7,11 @@ import psutil
 
 # generate camera urls
 def generate_stream_url(camera):
+    """
+
+    :param camera: Camera from models
+    :return: camera_url:str
+    """
     if camera['provider'] == 'dahua':
         return f"rtsp://{camera['username']}:{camera['password']}@{camera['host']}:{camera['port']}/cam/realmonitor?/channel=1&subtype=1"
 
@@ -38,6 +43,10 @@ def scan_rtsp_ports(network_range, ports):
 
 # get connected subnet
 def get_connected_subnet():
+    """
+
+    :return subnet:str
+    """
     for interface, address in psutil.net_if_addrs().items():
         for addr in address:
             if addr.family == socket.AF_INET:  # IPv4 addresses
@@ -49,8 +58,15 @@ def get_connected_subnet():
     return None
 
 
-# generate labels
-def generate_labels(filtered_detections, tracking_enabled: bool, tracker):
+# generate trackers
+def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
+    """
+
+    :param filtered_detections:Detections
+    :param tracking_enabled:bool
+    :param tracker:ByteTrack object
+    :return:
+    """
     # check if tracking is enabled and update detections with tracker
     if tracking_enabled:
         tracked_detections = tracker.update_with_detections(filtered_detections)
@@ -69,3 +85,13 @@ def generate_labels(filtered_detections, tracking_enabled: bool, tracker):
         ]
 
         return labels, filtered_detections
+
+
+# save the video to path
+def save_ai_surveillance_video():
+    """
+
+    :return:
+    """
+
+    pass

@@ -8,7 +8,7 @@ from ultralytics import YOLO
 
 from broker import MQTTBroker
 from db import camera_table, DBQuery, settings_table
-from utils import generate_stream_url, generate_labels
+from utils import generate_stream_url, generate_trackers
 
 broker = MQTTBroker()
 
@@ -21,8 +21,7 @@ async def live_ai_surveillance(camera_id: str):
     detection_objects = ["person", "car", "truck"]
     minimum_conf = 0.25
     counting_enabled = True
-    segmentation_enabled = True
-    tracking_enabled =True
+    tracking_enabled = True
 
     # settings = settings_table.all()[0]
 
@@ -54,6 +53,7 @@ async def live_ai_surveillance(camera_id: str):
 
     # start the video capturing
 
+
     cap = cv2.VideoCapture("src_videos/people-walking.mp4")
 
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -67,17 +67,17 @@ async def live_ai_surveillance(camera_id: str):
         return Response(response, status_code=status.HTTP_404_NOT_FOUND)
     # start the video recording
 
-    video_info = sv.VideoInfo(frame_width, frame_height, fps, 1800)
-    with sv.VideoSink(f"output/{random.randint(0, 100)}.mp4", video_info) as sink:
+    video_info = sv.VideoInfo(frame_width, frame_height, fps)
 
-        def generate():
-
+    def generate():
+        with sv.VideoSink(f"output/{random.randint(0, 100)}.mp4", video_info) as sink:
             while True:
 
                 ret, frame = cap.read()
                 # Break the loop if the video ends or cannot fetch the frame
                 if not ret:
                     print("End of video or cannot fetch frame.")
+                    cap.release()
                     break
                 # Run YOLO detection on the frame
                 results = model.predict(frame, conf=minimum_conf, iou=0.45)[0]
@@ -92,7 +92,7 @@ async def live_ai_surveillance(camera_id: str):
                 filtered_detections = detections[filtered_mask]
 
                 # generate labels based on whether tracking is enabled
-                labels, tracked_detections = generate_labels(filtered_detections, tracking_enabled, tracker)
+                labels, tracked_detections = generate_trackers(filtered_detections, tracking_enabled, tracker)
 
                 # extract labels and annotate frames
 
@@ -110,5 +110,6 @@ async def live_ai_surveillance(camera_id: str):
                 if ret:
                     # Yield each JPEG frame as part of the stream
                     yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
+
 
     return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
