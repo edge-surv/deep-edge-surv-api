@@ -78,10 +78,10 @@ def get_all_cameras():
     else:
 
         response = {
-            "cameras": None
+            "cameras": []
         }
 
-        return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
 
 # scan for IP cameras on the connected network or subnet
