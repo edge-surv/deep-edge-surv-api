@@ -5,6 +5,7 @@ db = TinyDB('db.json')
 camera_table = db.table('cameras')
 settings_table = db.table('settings')
 storage_table = db.table('storage')
+logs_table = db.table('logs')
 
 # query
 DBQuery = Query()

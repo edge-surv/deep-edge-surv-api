@@ -1,1 +1,88 @@
-{"cameras": {"1": {"id": "1122", "host": "192.168.1.108", "port": 554, "username": "admin", "password": "edgesurv00000000", "provider": "dahua", "name": "Front Room"}}, "storage": {"1": {"id": "a6f84e7b-a4c7-489e-b1cc-35ce457bdbd3", "camera_id": "1122", "camera_name": "Front Room", "filename": "a6f84e7b-a4c7-489e-b1cc-35ce457bdbd3_2025-01-24", "date": "2025-01-24", "time": "23:30:44.610037"}, "2": {"id": "27b5d913-351a-4cd1-9758-27db4ca4ee8b", "camera_id": "1122", "camera_name": "Front Room", "filename": "27b5d913-351a-4cd1-9758-27db4ca4ee8b_2025-01-24.mp4", "date": "2025-01-24", "time": "23:32:11.114091"}, "3": {"id": "fd1d98e9-8db2-4bca-b3e4-333f209a1733", "camera_id": "1122", "camera_name": "Front Room", "filename": "fd1d98e9-8db2-4bca-b3e4-333f209a1733_2025-01-24.mp4", "date": "2025-01-24", "time": "23:44:00.123234"}}}
+{
+  "cameras": {
+    "1": {
+      "id": "1122",
+      "host": "192.168.1.108",
+      "port": 554,
+      "username": "admin",
+      "password": "edgesurv00000000",
+      "provider": "dahua",
+      "name": "Front Room"
+    }
+
+  },
+  "storage": {
+    "1": {
+      "id": "a6f84e7b-a4c7-489e-b1cc-35ce457bdbd3",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "a6f84e7b-a4c7-489e-b1cc-35ce457bdbd3_2025-01-24",
+      "date": "2025-01-24",
+      "time": "23:30:44.610037"
+    },
+    "2": {
+      "id": "27b5d913-351a-4cd1-9758-27db4ca4ee8b",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "27b5d913-351a-4cd1-9758-27db4ca4ee8b_2025-01-24.mp4",
+      "date": "2025-01-24",
+      "time": "23:32:11.114091"
+    },
+    "3": {
+      "id": "fd1d98e9-8db2-4bca-b3e4-333f209a1733",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "fd1d98e9-8db2-4bca-b3e4-333f209a1733_2025-01-24.mp4",
+      "date": "2025-01-24",
+      "time": "23:44:00.123234"
+    },
+    "4": {
+      "id": "9d594866-1d72-46d2-a20f-fb56fa12db9e",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "9d594866-1d72-46d2-a20f-fb56fa12db9e_2025-01-26.mp4",
+      "date": "2025-01-26",
+      "time": "21:33:34.305983"
+    },
+    "5": {
+      "id": "0033bdca-b9e0-4a76-8a88-353ec1665ec6",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "0033bdca-b9e0-4a76-8a88-353ec1665ec6_2025-01-26.mp4",
+      "date": "2025-01-26",
+      "time": "21:34:30.401112"
+    },
+    "6": {
+      "id": "a1ead40a-109b-4f50-b0f3-91f476515fca",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "a1ead40a-109b-4f50-b0f3-91f476515fca_2025-01-26.mp4",
+      "date": "2025-01-26",
+      "time": "21:35:56.533999"
+    },
+    "7": {
+      "id": "652df3c9-6740-4232-bc17-6ae4f90d2ec3",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "652df3c9-6740-4232-bc17-6ae4f90d2ec3_2025-01-26.mp4",
+      "date": "2025-01-26",
+      "time": "21:40:01.531961"
+    },
+    "8": {
+      "id": "07adbced-b093-47b7-b858-529da893fb5c",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "07adbced-b093-47b7-b858-529da893fb5c_2025-01-26.mp4",
+      "date": "2025-01-26",
+      "time": "21:40:58.273904"
+    },
+    "9": {
+      "id": "4148629e-bb57-4cb4-8129-f5dd246f2a2d",
+      "camera_id": "1122",
+      "camera_name": "Front Room",
+      "filename": "4148629e-bb57-4cb4-8129-f5dd246f2a2d_2025-01-31.mp4",
+      "date": "2025-01-31",
+      "time": "21:32:06.243935"
+    }
+  }
+}

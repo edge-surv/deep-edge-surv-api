@@ -36,3 +36,12 @@ class Storage(BaseModel):
     filename: str
     date: str
     time: str
+
+
+class Logs(BaseModel):
+    id: str
+    camera_id: str
+    filename: str
+    objects: List[str| int]
+    date: str
+    time: str

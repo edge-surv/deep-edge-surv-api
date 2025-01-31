@@ -1,13 +1,12 @@
 import cv2
 import supervision as sv
 from fastapi import APIRouter, Response
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, JSONResponse
 from supervision.geometry.core import Point
-from ultralytics import YOLO
 
 from broker import MQTTBroker
 from db import camera_table, DBQuery
-from utils import generate_stream_url, generate_trackers, save_footage
+from utils import generate_stream_url, generate_trackers, save_footage, model, save_frame
 
 broker = MQTTBroker()
 
@@ -51,7 +50,6 @@ async def live_ai_surveillance(camera_id: str):
 
     # model configuration
 
-    model = YOLO("ai/yolov8n.pt")
     model.fuse()
     # annotations
     box_annotator = sv.BoxAnnotator()
@@ -83,7 +81,7 @@ async def live_ai_surveillance(camera_id: str):
             "storage": False,
             "message": "Could not save footage",
         }
-        return Response(response, status_code=400)
+        return JSONResponse(response, status_code=400)
 
     def generate():
 
@@ -105,6 +103,15 @@ async def live_ai_surveillance(camera_id: str):
                 # generate labels based on whether tracking is enabled
                 labels, tracked_detections = generate_trackers(filtered_detections, tracking_enabled, tracker)
 
+                # set to hold tracked detections
+                # tracked_objects = set()
+                #
+                # # handle the logs logic
+                # for tracked_detection in tracked_detections:
+                #
+                #     if not tracked_detection in tracked_objects:
+                #         tracked_objects.add(tracked_detection)
+
                 # extract labels and annotate frames
 
                 annotated_frame = box_annotator.annotate(
@@ -112,6 +119,10 @@ async def live_ai_surveillance(camera_id: str):
 
                 labelled_frame = label_annotator.annotate(
                     scene=annotated_frame, detections=tracked_detections, labels=labels)
+
+                # save the labelled frames for logs
+
+                save_frame(labelled_frame, tracked_detections, camera_id)
 
                 # trigger the detections for counting
 

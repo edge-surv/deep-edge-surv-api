@@ -1,7 +1,9 @@
+from starlette.responses import JSONResponse
+
 from db import camera_table
 from models import Camera
 from utils import get_connected_subnet, scan_rtsp_ports
-from fastapi import APIRouter, status, Response
+from fastapi import APIRouter, status
 
 camera_router = APIRouter()
 
@@ -16,7 +18,7 @@ def add_camera(camera_data: Camera):
             "created": True,
         }
 
-        return Response(response, status_code=status.HTTP_201_CREATED)
+        return JSONResponse(response, status_code=status.HTTP_201_CREATED)
 
     else:
 
@@ -24,7 +26,7 @@ def add_camera(camera_data: Camera):
             "created": False,
         }
 
-        return Response(response, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 # delete camera from the database
@@ -36,7 +38,7 @@ def delete_camera(camera_id: str):
         "deleted": True,
     }
 
-    return Response(response, status_code=status.HTTP_204_NO_CONTENT)
+    return JSONResponse(response, status_code=status.HTTP_204_NO_CONTENT)
 
 
 # update camera
@@ -49,7 +51,7 @@ def update_camera(camera_data: Camera, camera_id: str):
             "updated": True,
         }
 
-        return Response(response, status_code=status.HTTP_200_OK)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
     else:
 
@@ -57,7 +59,7 @@ def update_camera(camera_data: Camera, camera_id: str):
             "updated": False
         }
 
-        return Response(response, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 # list cameras
@@ -71,7 +73,7 @@ def get_all_cameras():
             "cameras": cameras
         }
 
-        return Response(response, status_code=status.HTTP_200_OK)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
     else:
 
@@ -79,7 +81,7 @@ def get_all_cameras():
             "cameras": None
         }
 
-        return Response(response, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
 
 
 # scan for IP cameras on the connected network or subnet
@@ -97,7 +99,7 @@ def discover_cameras():
             "cameras": available_cameras
         }
 
-        return Response(response, status_code=status.HTTP_200_OK)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
     else:
 
@@ -105,4 +107,4 @@ def discover_cameras():
             "cameras": None
         }
 
-        return Response(response, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)

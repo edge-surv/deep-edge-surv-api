@@ -1,12 +1,19 @@
 import ipaddress
 import socket
+import os
 
 import nmap
 import psutil
 from datetime import datetime
 from db import storage_table
+import cv2
 import uuid
 from models import Storage
+from ultralytics import YOLO
+
+from settings import ROOT_DIR
+
+model = YOLO("ai/yolov8n.pt")
 
 
 # generate camera urls
@@ -129,3 +136,23 @@ def save_footage(camera):
     else:
 
         return False, None
+
+
+# save frames
+def save_frame(frame, detections, camera_id):
+    """
+
+    :param frame:
+    :param camera_id
+    :param detections Tracked detections:
+    :return bool
+    """
+    timestamp = f"{str(datetime.now().date())}__{str(datetime.now().time())}"
+
+    # save the details in logs table
+
+    # persist to file dir
+    frame_name = os.path.join(ROOT_DIR, f"logs/images/{timestamp}.jpg")
+
+    cv2.imwrite(frame_name, frame)
+

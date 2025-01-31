@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, status
+from starlette.responses import  JSONResponse
 from models import Settings
 
 from db import settings_table, storage_table
@@ -16,7 +17,7 @@ def save_settings(settings_data: Settings):
             "created": True,
         }
 
-        return Response(response, status_code=status.HTTP_201_CREATED)
+        return JSONResponse(response, status_code=status.HTTP_201_CREATED)
 
     else:
 
@@ -24,7 +25,7 @@ def save_settings(settings_data: Settings):
             "created": False,
         }
 
-        return Response(response, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 # get the settings
@@ -37,14 +38,14 @@ def get_settings():
             "found": False,
         }
 
-        return Response(response, status_code=status.HTTP_404_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_404_BAD_REQUEST)
 
     else:
         response = {
             "settings": settings,
         }
 
-        return Response(response, status_code=status.HTTP_200_OK)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
 
 # update the settings
@@ -60,7 +61,7 @@ def update_settings(settings_data: Settings):
             "updated": True,
         }
 
-        return Response(response, status_code=status.HTTP_200_OK)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
 
     else:
@@ -69,7 +70,7 @@ def update_settings(settings_data: Settings):
             "created": False,
         }
 
-        return Response(response, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 # get the stored footage
@@ -82,11 +83,11 @@ def get_footage():
         response = {
             "found": False,
         }
-        return Response(response, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
 
     else:
         response = {
             "footage": footage,
         }
 
-        return Response(response, status_code=status.HTTP_200_OK)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
