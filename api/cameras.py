@@ -1,6 +1,6 @@
 from starlette.responses import JSONResponse
 
-from db import camera_table
+from db import camera_table, DBQuery
 from models import Camera
 from utils import get_connected_subnet, scan_rtsp_ports
 from fastapi import APIRouter, status
@@ -32,7 +32,7 @@ def add_camera(camera_data: Camera):
 # delete camera from the database
 @camera_router.delete("/{camera_id}")
 def delete_camera(camera_id: str):
-    camera_table.remove(Camera.id == camera_id)
+    camera_table.remove(DBQuery.id == camera_id)
 
     response = {
         "deleted": True,
@@ -45,7 +45,7 @@ def delete_camera(camera_id: str):
 @camera_router.put("/{camera_id}")
 def update_camera(camera_data: Camera, camera_id: str):
     if camera_data:
-        camera_table.update(camera_data, Camera.id == camera_id)
+        camera_table.update(camera_data, DBQuery.id == camera_id)
 
         response = {
             "updated": True,
