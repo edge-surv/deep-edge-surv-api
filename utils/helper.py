@@ -5,10 +5,10 @@ import os
 import nmap
 import psutil
 from datetime import datetime
-from db import storage_table
+from db import storage_table, logs_table
 import cv2
 import uuid
-from models import Storage
+from models import Storage, Logs
 from ultralytics import YOLO
 
 from settings import ROOT_DIR
@@ -139,20 +139,33 @@ def save_footage(camera):
 
 
 # save frames
-def save_frame(frame, detections, camera_id):
+def save_frame(object_detected, frame, detections, camera_id, frame_count):
     """
-
+    :param object_detected: bool
     :param frame:
-    :param camera_id
-    :param detections Tracked detections:
-    :return bool
+    :param detections:
+    :param camera_id:
+    :return:
     """
-    timestamp = f"{str(datetime.now().date())}__{str(datetime.now().time())}"
+    frame_skip = 30
 
-    # save the details in logs table
+    if object_detected and frame_count % frame_skip == 0:
+        timestamp = f"{str(datetime.now().date())}__{str(datetime.now().time())}"
 
-    # persist to file dir
-    frame_name = os.path.join(ROOT_DIR, f"logs/images/{timestamp}.jpg")
+        # save the details in logs table
+        logs_dict = {
+            "camera_id": camera_id,
+            "date": datetime.now().date(),
+            "time": datetime.now().time(),
+            "objects_detected": detections,
+            "filename": f"{timestamp}.jpg",
+        }
 
-    cv2.imwrite(frame_name, frame)
+        logs_data = Logs(**logs_dict)
 
+        logs_table.insert(logs_data.model_dump())
+
+        # write the files to the dir to
+        frame_name = os.path.join(ROOT_DIR, f"logs/images/{timestamp}.jpg")
+
+        cv2.imwrite(frame_name, frame)

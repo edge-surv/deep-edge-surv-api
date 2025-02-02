@@ -84,11 +84,13 @@ async def live_ai_surveillance(camera_id: str):
         return JSONResponse(response, status_code=400)
 
     def generate():
+        frame_count = 0
 
         with sv.VideoSink(f"output/{filename}", video_info) as sink:
             # Run YOLO detection on the frame
 
             for frame in frames_generator:
+
                 results = model.predict(frame, conf=minimum_conf, iou=0.45)[0]
 
                 detections = sv.Detections.from_ultralytics(results)
@@ -114,6 +116,8 @@ async def live_ai_surveillance(camera_id: str):
 
                 # extract labels and annotate frames
 
+                frame_count += 1
+
                 annotated_frame = box_annotator.annotate(
                     scene=frame, detections=tracked_detections)
 
@@ -122,7 +126,7 @@ async def live_ai_surveillance(camera_id: str):
 
                 # save the labelled frames for logs
 
-                save_frame(labelled_frame, tracked_detections, camera_id)
+                save_frame(True, labelled_frame, tracked_detections, camera_id)
 
                 # trigger the detections for counting
 
