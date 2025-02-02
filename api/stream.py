@@ -73,20 +73,22 @@ async def live_ai_surveillance(camera_id: str):
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-    # start the video capturing
-
     # generate the filename and save it to the database
-    footage_saved, filename = save_footage(camera)
+    footage_saved, output_file_path = save_footage(camera)
 
-    video_info = sv.VideoInfo(frame_width, frame_height, fps)
-    # start the video recording
-
-    if not footage_saved and filename is None:
+    if not footage_saved and output_file_path is None:
         response = {
             "storage": False,
             "message": "Could not save footage",
         }
         return JSONResponse(response, status_code=400)
+
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    video_writer = cv2.VideoWriter(f"output/{output_file_path}", fourcc, fps, (frame_width, frame_height))
+
+    video_info = sv.VideoInfo(frame_width, frame_height, fps)
+
+    # start the video recording
 
     # the function to yield streams
 
@@ -99,60 +101,58 @@ async def live_ai_surveillance(camera_id: str):
             if not ret:
                 break
 
-            with sv.VideoSink(f"output/{filename}", video_info) as video_writer:
+            results = model.predict(frame, conf=minimum_conf, iou=0.45)[0]
 
-                results = model.predict(frame, conf=minimum_conf, iou=0.45)[0]
+            detections = sv.Detections.from_ultralytics(results)
 
-                detections = sv.Detections.from_ultralytics(results)
+            filtered_mask = [
+                class_name in detection_objects
+                for class_name in detections["class_name"]
+            ]
 
-                filtered_mask = [
-                    class_name in detection_objects
-                    for class_name in detections["class_name"]
-                ]
+            filtered_detections = detections[filtered_mask]
 
-                filtered_detections = detections[filtered_mask]
+            # classes for saving in the logs table
 
-                # classes for saving in the logs table
+            detected_classes = [class_name for class_name in filtered_detections["class_name"]]
 
-                detected_classes = [class_name for class_name in filtered_detections["class_name"]]
+            # generate labels based on whether tracking is enabled
+            labels, tracked_detections = generate_trackers(filtered_detections, tracking_enabled, tracker)
 
-                # generate labels based on whether tracking is enabled
-                labels, tracked_detections = generate_trackers(filtered_detections, tracking_enabled, tracker)
+            # set to hold tracked detections
+            # tracked_objects = set()
+            #
+            # # handle the logs logic
+            # for tracked_detection in tracked_detections:
+            #
+            #     if not tracked_detection in tracked_objects:
+            #         tracked_objects.add(tracked_detection)
 
-                # set to hold tracked detections
-                # tracked_objects = set()
-                #
-                # # handle the logs logic
-                # for tracked_detection in tracked_detections:
-                #
-                #     if not tracked_detection in tracked_objects:
-                #         tracked_objects.add(tracked_detection)
+            # extract labels and annotate frames
 
-                # extract labels and annotate frames
+            frame_count += 1
 
-                frame_count += 1
+            annotated_frame = box_annotator.annotate(
+                scene=frame, detections=tracked_detections)
 
-                annotated_frame = box_annotator.annotate(
-                    scene=frame, detections=tracked_detections)
+            labelled_frame = label_annotator.annotate(
+                scene=annotated_frame, detections=tracked_detections, labels=labels)
 
-                labelled_frame = label_annotator.annotate(
-                    scene=annotated_frame, detections=tracked_detections, labels=labels)
+            # save the labelled frames for logs
 
-                # save the labelled frames for logs
+            save_frame(True, labelled_frame, detected_classes, camera_id, frame_count)
 
-                save_frame(True, labelled_frame, detected_classes, camera_id, frame_count)
+            # trigger the detections for counting
 
-                # trigger the detections for counting
+            line_zone.trigger(tracked_detections)
 
-                line_zone.trigger(tracked_detections)
+            # save the file
 
-                # save the file
+            video_writer.write(labelled_frame)
 
-                video_writer.write_frame(labelled_frame)
-
-                ret, jpeg = cv2.imencode(".jpg", labelled_frame)
-                if ret:
-                    # Yield each JPEG frame as part of the stream
-                    yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
+            ret, jpeg = cv2.imencode(".jpg", labelled_frame)
+            if ret:
+                # Yield each JPEG frame as part of the stream
+                yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
 
     return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
