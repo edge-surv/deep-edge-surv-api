@@ -6,7 +6,7 @@ from supervision.geometry.core import Point
 
 from broker import MQTTBroker
 from db import camera_table, DBQuery
-from utils import generate_stream_url, generate_trackers, save_footage, model, save_frame
+from utils import generate_stream_url, generate_trackers, save_footage_details, model, save_frame
 
 broker = MQTTBroker()
 
@@ -28,6 +28,7 @@ async def live_ai_surveillance(camera_id: str):
     minimum_conf = 0.25
     counting_enabled = True
     tracking_enabled = True
+    save_footage = True
 
     # settings = settings_table.all()[0]
 
@@ -36,6 +37,7 @@ async def live_ai_surveillance(camera_id: str):
     # counting_enabled = settings["enable_counting"]
     # segmentation_enabled = settings["enable_segmentation"]
     # tracking_enabled = settings["enable_tracking"]
+    # save_footage = settings["save_footage"]
 
     # get the cameras and extract the RTSP url
     cameras = camera_table.search(DBQuery.id == camera_id)
@@ -74,7 +76,7 @@ async def live_ai_surveillance(camera_id: str):
     fps = int(cap.get(cv2.CAP_PROP_FPS))
 
     # generate the filename and save it to the database
-    footage_saved, output_file_path = save_footage(camera)
+    footage_saved, output_file_path = save_footage_details(camera)
 
     if not footage_saved and output_file_path is None:
         response = {
@@ -84,11 +86,8 @@ async def live_ai_surveillance(camera_id: str):
         return JSONResponse(response, status_code=400)
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+
     video_writer = cv2.VideoWriter(f"output/{output_file_path}", fourcc, fps, (frame_width, frame_height))
-
-    video_info = sv.VideoInfo(frame_width, frame_height, fps)
-
-    # start the video recording
 
     # the function to yield streams
 
@@ -146,9 +145,10 @@ async def live_ai_surveillance(camera_id: str):
 
             line_zone.trigger(tracked_detections)
 
-            # save the file
+            # write frames to video
 
-            video_writer.write(labelled_frame)
+            if save_footage:
+                video_writer.write(labelled_frame)
 
             ret, jpeg = cv2.imencode(".jpg", labelled_frame)
             if ret:

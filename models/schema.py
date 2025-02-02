@@ -30,6 +30,7 @@ class Settings(BaseModel):
     minimum_confidence: int | float
     enable_tracking: bool
     enable_counting: bool
+    save_footage: bool
 
 
 class Storage(BaseModel):

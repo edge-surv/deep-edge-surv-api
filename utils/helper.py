@@ -108,7 +108,7 @@ def generate_count():
     pass
 
 
-def save_footage(camera):
+def save_footage_details(camera):
     """
     :param camera: Camera from models
     :return: Tuple[bool, str|None]
