@@ -1,16 +1,16 @@
 import ipaddress
-import socket
 import os
+import socket
+import uuid
+from datetime import datetime
 
+import cv2
 import nmap
 import psutil
-from datetime import datetime
-from db import storage_table, logs_table
-import cv2
-import uuid
-from models import Storage, Logs
 from ultralytics import YOLO
 
+from db import storage_table, logs_table
+from models import Storage, Logs
 from settings import ROOT_DIR
 
 model = YOLO("ai/yolov8n.pt")
@@ -139,11 +139,12 @@ def save_footage(camera):
 
 
 # save frames
-def save_frame(object_detected, frame, detections, camera_id, frame_count):
+def save_frame(object_detected, frame, detected_classes, camera_id, frame_count):
     """
+    :param detected_classes:
+    :param frame_count:
     :param object_detected: bool
     :param frame:
-    :param detections:
     :param camera_id:
     :return:
     """
@@ -155,9 +156,9 @@ def save_frame(object_detected, frame, detections, camera_id, frame_count):
         # save the details in logs table
         logs_dict = {
             "camera_id": camera_id,
-            "date": datetime.now().date(),
-            "time": datetime.now().time(),
-            "objects_detected": detections,
+            "date": str(datetime.now().date()),
+            "time": str(datetime.now().time()),
+            "objects_detected": detected_classes,
             "filename": f"{timestamp}.jpg",
         }
 

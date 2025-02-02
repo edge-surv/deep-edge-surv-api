@@ -66,15 +66,20 @@ async def live_ai_surveillance(camera_id: str):
     line_zone = sv.LineZone(start=LINE_START, end=LINE_END)
 
     # start the video capturing
+    cap = cv2.VideoCapture(VIDEO_SRC_PATH)
+    # get video info
 
-    frames_generator = sv.get_video_frames_generator(VIDEO_SRC_PATH)
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-    # start the video recording
-
-    video_info = sv.VideoInfo.from_video_path(VIDEO_SRC_PATH)
+    # start the video capturing
 
     # generate the filename and save it to the database
     footage_saved, filename = save_footage(camera)
+
+    video_info = sv.VideoInfo(frame_width, frame_height, fps)
+    # start the video recording
 
     if not footage_saved and filename is None:
         response = {
@@ -83,13 +88,18 @@ async def live_ai_surveillance(camera_id: str):
         }
         return JSONResponse(response, status_code=400)
 
+    # the function to yield streams
+
     def generate():
         frame_count = 0
 
-        with sv.VideoSink(f"output/{filename}", video_info) as sink:
-            # Run YOLO detection on the frame
+        while True:
+            ret, frame = cap.read()
 
-            for frame in frames_generator:
+            if not ret:
+                break
+
+            with sv.VideoSink(f"output/{filename}", video_info) as video_writer:
 
                 results = model.predict(frame, conf=minimum_conf, iou=0.45)[0]
 
@@ -101,6 +111,10 @@ async def live_ai_surveillance(camera_id: str):
                 ]
 
                 filtered_detections = detections[filtered_mask]
+
+                # classes for saving in the logs table
+
+                detected_classes = [class_name for class_name in filtered_detections["class_name"]]
 
                 # generate labels based on whether tracking is enabled
                 labels, tracked_detections = generate_trackers(filtered_detections, tracking_enabled, tracker)
@@ -126,7 +140,7 @@ async def live_ai_surveillance(camera_id: str):
 
                 # save the labelled frames for logs
 
-                save_frame(True, labelled_frame, tracked_detections, camera_id)
+                save_frame(True, labelled_frame, detected_classes, camera_id, frame_count)
 
                 # trigger the detections for counting
 
@@ -134,7 +148,7 @@ async def live_ai_surveillance(camera_id: str):
 
                 # save the file
 
-                sink.write_frame(labelled_frame)
+                video_writer.write_frame(labelled_frame)
 
                 ret, jpeg = cv2.imencode(".jpg", labelled_frame)
                 if ret:

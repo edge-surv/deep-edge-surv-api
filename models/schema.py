@@ -1,19 +1,19 @@
 from typing import List
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 # user model
 class UserData(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: str = str(uuid4())
     username: str
     password: str
 
 
 # camera model
 class Camera(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: str = str(uuid4())
     host: str
     port: int
     name: str
@@ -24,7 +24,7 @@ class Camera(BaseModel):
 
 # settings model
 class Settings(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: str = str(uuid4())
     detection_objects: List[str]
     enabled: bool
     minimum_confidence: int | float
@@ -33,7 +33,7 @@ class Settings(BaseModel):
 
 
 class Storage(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: str = str(uuid4())
     camera_id: str
     camera_name: str
     filename: str
@@ -42,9 +42,9 @@ class Storage(BaseModel):
 
 
 class Logs(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: str = str(uuid4())
     camera_id: str
     filename: str
-    objects_detected: List[str| int]
+    objects_detected: List[str | int]
     date: str
     time: str
