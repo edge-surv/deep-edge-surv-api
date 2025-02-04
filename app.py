@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import camera_router, streaming_router, settings_router, analytics_router
+from api import camera_router, streaming_router, settings_router, analytics_router, storage_router
 
 app = FastAPI()
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,3 +17,5 @@ app.include_router(streaming_router, prefix="/api/streams")
 app.include_router(settings_router, prefix="/api/settings")
 
 app.include_router(analytics_router, prefix="/api/analytics")
+
+app.include_router(storage_router, prefix="/api/storage")

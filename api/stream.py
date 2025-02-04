@@ -12,8 +12,10 @@ broker = MQTTBroker()
 
 streaming_router = APIRouter()
 
-VIDEO_SRC_PATH = "src_videos/people-walking.mp4"
-
+VIDEO_SRC_PATH_1 = "src_videos/vehicles.mp4"
+VIDEO_SRC_PATH_2 = "src_videos/people-walking.mp4"
+# VIDEO_SRC_PATH = 0
+VIDEO_SRCS = [VIDEO_SRC_PATH_1,VIDEO_SRC_PATH_2]
 LINE_START = Point(10, 500)
 LINE_END = Point(2000, 500)
 
@@ -68,7 +70,7 @@ async def live_ai_surveillance(camera_id: str):
     line_zone = sv.LineZone(start=LINE_START, end=LINE_END)
 
     # start the video capturing
-    cap = cv2.VideoCapture(VIDEO_SRC_PATH)
+    cap = cv2.VideoCapture(VIDEO_SRC_PATH_1)
     # get video info
 
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

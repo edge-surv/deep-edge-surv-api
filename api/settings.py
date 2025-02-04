@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from starlette.responses import  JSONResponse
+from starlette.responses import JSONResponse
 from models import Settings
 
 from db import settings_table, storage_table
@@ -11,6 +11,11 @@ settings_router = APIRouter()
 @settings_router.post("/")
 def save_settings(settings_data: Settings):
     if settings_data:
+
+        # clear the settings table first
+        settings_table.truncate()
+
+        # save the new settings
         settings_table.insert(settings_data.model_dump())
 
         response = {
@@ -35,14 +40,14 @@ def get_settings():
 
     if len(settings) == 0:
         response = {
-            "found": False,
+            "settings": None,
         }
 
-        return JSONResponse(response, status_code=status.HTTP_404_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
 
     else:
         response = {
-            "settings": settings,
+            "settings": settings[0],
         }
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
@@ -76,7 +81,6 @@ def update_settings(settings_data: Settings):
 # get the stored footage
 @settings_router.get("/footage")
 def get_footage():
-
     footage = storage_table.all()
 
     if len(footage) == 0:
