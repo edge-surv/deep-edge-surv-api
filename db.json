@@ -1,1 +1,134 @@
-{"settings": {"1": {"id": "c03a676f-eef3-46a0-a793-b06dddcc8739", "detection_objects": ["person"], "enabled": true, "minimum_confidence": 0.25, "enable_tracking": true, "enable_counting": false, "save_footage": false}}}
+{
+  "settings": {
+    "1": {
+      "id": "c03a676f-eef3-46a0-a793-b06dddcc8739",
+      "detection_objects": [
+        "person"
+      ],
+      "enabled": true,
+      "minimum_confidence": 0.25,
+      "enable_tracking": true,
+      "enable_counting": false,
+      "save_footage": false
+    }
+  },
+  "cameras": {
+    "1": {
+      "id": "shshshs",
+      "host": "192.168.1.100",
+      "port": 554,
+      "name": "Front Door",
+      "username": "edgesurv",
+      "password": "00000000",
+      "provider": "Dahua"
+    }
+  },
+  "storage": {
+    "1": {
+      "id": "a9463247-8a0f-48cc-863b-a97afa40070f",
+      "camera_id": "shshshs",
+      "camera_name": "Front Door",
+      "filename": "a9463247-8a0f-48cc-863b-a97afa40070f_2025-02-06.mp4",
+      "date": "2025-02-06",
+      "time": "20:40:39.673850"
+    }
+  },
+  "logs": {
+    "1": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:40:45.143561.jpg",
+      "objects_detected": [
+        "car",
+        "car",
+        "car",
+        "truck"
+      ],
+      "date": "2025-02-06",
+      "time": "20:40:45.143569"
+    },
+    "2": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:40:51.966264.jpg",
+      "objects_detected": [
+        "truck",
+        "car",
+        "car",
+        "car",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:40:51.966272"
+    },
+    "3": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:40:55.701092.jpg",
+      "objects_detected": [
+        "car",
+        "car",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:40:55.701103"
+    },
+    "4": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:40:59.391179.jpg",
+      "objects_detected": [
+        "car",
+        "car",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:40:59.391185"
+    },
+    "5": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:41:04.123563.jpg",
+      "objects_detected": [
+        "car",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:41:04.123569"
+    },
+    "6": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:41:08.039631.jpg",
+      "objects_detected": [
+        "car",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:41:08.039638"
+    },
+    "7": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:41:11.799000.jpg",
+      "objects_detected": [
+        "car",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:41:11.799006"
+    },
+    "8": {
+      "id": "e9a01dde-5a6b-4a1f-bf5f-b8384dd2a12e",
+      "camera_id": "shshshs",
+      "filename": "2025-02-06__20:41:15.555504.jpg",
+      "objects_detected": [
+        "car",
+        "truck",
+        "car"
+      ],
+      "date": "2025-02-06",
+      "time": "20:41:15.555511"
+    }
+  }
+}

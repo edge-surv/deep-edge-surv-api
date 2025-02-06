@@ -170,3 +170,15 @@ def save_frame(object_detected, frame, detected_classes, camera_id, frame_count)
         frame_name = os.path.join(ROOT_DIR, f"logs/images/{timestamp}.jpg")
 
         cv2.imwrite(frame_name, frame)
+
+
+# stream the output video
+def stream_output_video(file_path: str):
+    """
+
+    :param file_path:str
+    :return video stream as bytes
+    """
+
+    with open(file_path, "rb") as video_file:
+        yield from video_file

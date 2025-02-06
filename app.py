@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
+
 from api import camera_router, streaming_router, settings_router, analytics_router, storage_router
 
 app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -11,6 +14,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# static files config
+app.mount("/logs",StaticFiles(directory="logs"),name="logs")
+app.mount("/output",StaticFiles(directory="output"),name="output")
 app.include_router(camera_router, prefix="/api/cameras")
 app.include_router(streaming_router, prefix="/api/streams")
 
