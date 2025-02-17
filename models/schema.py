@@ -22,9 +22,16 @@ class Camera(BaseModel):
     provider: str
 
 
+class Agent(BaseModel):
+    id: str = str(uuid4())
+    name: str
+    max_cameras: int = 4
+
+
 # settings model
 class Settings(BaseModel):
     id: str = str(uuid4())
+    agent_id: str
     detection_objects: List[str]
     enabled: bool
     minimum_confidence: int | float
