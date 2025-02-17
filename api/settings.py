@@ -34,7 +34,7 @@ def save_settings(settings_data: Settings):
 
 
 # get the settings
-@settings_router.get("/")
+@settings_router.get("/{agent_id}")
 def get_settings():
     settings = settings_table.all()
 
@@ -54,7 +54,7 @@ def get_settings():
 
 
 # update the settings
-@settings_router.put("/")
+@settings_router.put("/{agent_id}")
 def update_settings(settings_data: Settings):
     if settings_data:
 
