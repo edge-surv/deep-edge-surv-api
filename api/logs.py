@@ -2,11 +2,11 @@ from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
 from db import logs_table
 
-analytics_router = APIRouter()
+logs_router = APIRouter()
 
 
-@analytics_router.get("/")
-def get_analytics():
+@logs_router.get("/")
+def get_logs():
     logs = logs_table.all()
 
     if len(logs) < 1:
