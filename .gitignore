@@ -6,3 +6,4 @@ ai
 src_videos
 .idea
 logs
+.env

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ class Agent(BaseModel):
 # settings model
 class Settings(BaseModel):
     id: str = str(uuid4())
-    agent_id: str
+    agent_id: Optional[str] = None
     detection_objects: List[str]
     enabled: bool
     minimum_confidence: int | float
@@ -56,3 +56,9 @@ class Logs(BaseModel):
     objects_detected: List[str | int]
     date: str
     time: str
+
+
+class GenerativeAIConfig(BaseModel):
+    id: str = str(uuid4())
+    prompt: str
+    extra_instructions: str
