@@ -1,8 +1,11 @@
+import os
+
+import requests
 from fastapi import APIRouter
 from starlette.responses import JSONResponse
 
 from db import agents_table, DBQuery, settings_table
-from models import Agent, Settings
+from models import Agent, Settings, GenerativeAIConfig
 
 agents_router = APIRouter()
 

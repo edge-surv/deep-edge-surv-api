@@ -56,3 +56,9 @@ class Logs(BaseModel):
     objects_detected: List[str | int]
     date: str
     time: str
+
+
+class GenerativeAIConfig(BaseModel):
+    id: str = str(uuid4())
+    prompt: str
+    extra_instructions: str
