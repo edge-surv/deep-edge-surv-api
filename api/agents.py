@@ -1,11 +1,8 @@
-import os
-
-import requests
 from fastapi import APIRouter
 from starlette.responses import JSONResponse
 
-from db import agents_table, DBQuery, settings_table
-from models import Agent, Settings, GenerativeAIConfig
+from db import agents_table, DBQuery
+from models import Agent
 
 agents_router = APIRouter()
 
@@ -19,7 +16,7 @@ def get_agents():
             "agents": []
         }
 
-        return JSONResponse(response, status_code=404)
+        return JSONResponse(response, status_code=200)
 
     response = {
         "agents": agents
@@ -72,33 +69,6 @@ def update_agent(agent_id: str, agent_data: Agent):
 
     else:
 
-        response = {
-            "updated": False
-        }
-
-        return JSONResponse(response, status_code=400)
-
-
-# configure agent
-@agents_router.put("/{agent_id}/config")
-def agent_setup(agent_id: str, settings: Settings):
-    if settings:
-
-        settings_data = {
-            **settings.model_dump(),
-            "agent_id": agent_id
-        }
-
-        settings_table.insert(settings_data)
-
-        response = {
-            "updated": True
-        }
-
-        return JSONResponse(response, status_code=200)
-
-
-    else:
         response = {
             "updated": False
         }
