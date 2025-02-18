@@ -9,8 +9,9 @@ class AIProcessor:
     A class that processes frames using a given model.
     """
 
-    def __init__(self, detection_objects, running=True, minimum_conf=0.25, tracking_enabled=True):
+    def __init__(self, detection_objects, polygon_zone, running=True, minimum_conf=0.25, tracking_enabled=True):
         self.model = YOLO("ai/yolov8n.pt")
+        self.polygon_zone = polygon_zone
         self.model.fuse()
         self.detection_objects = detection_objects
         self.minimum_conf = minimum_conf
@@ -30,6 +31,7 @@ class AIProcessor:
         ]
 
         filtered_detections = detections[filtered_mask]
+        self.polygon_zone.trigger(detections=filtered_detections)
         labels, tracked_detections = generate_trackers(filtered_detections, self.tracking_enabled, self.tracker)
 
         return {

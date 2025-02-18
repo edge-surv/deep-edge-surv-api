@@ -90,7 +90,7 @@ def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
     else:
 
         labels = [
-            f"{class_name} {confidence:.2f}"
+            f"{class_name}"
             for class_name, confidence
             in zip(filtered_detections['class_name'], filtered_detections.confidence)
         ]

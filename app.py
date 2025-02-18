@@ -23,4 +23,4 @@ app.include_router(agents_router, prefix="/api/agents")
 
 app.include_router(settings_router, prefix="/api/settings")
 
-app.include_router(logs_router, prefix="/api/analytics")
+app.include_router(logs_router, prefix="/api/logs")

@@ -7,6 +7,7 @@ settings_table = db.table('settings')
 camera_config_table = db.table('camera_config')
 logs_table = db.table('logs')
 agents_table = db.table('agents')
+camera_zones_table = db.table('camera_zones')
 
 # query
 DBQuery = Query()
