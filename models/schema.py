@@ -14,6 +14,7 @@ class UserData(BaseModel):
 # camera model
 class Camera(BaseModel):
     id: str = str(uuid4())
+    agent_id: str
     host: str
     port: int
     name: str

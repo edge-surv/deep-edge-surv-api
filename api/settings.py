@@ -2,41 +2,42 @@ from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
 from models import Settings
 
-from db import settings_table
+from db import settings_table, DBQuery
 
 settings_router = APIRouter()
 
 
-# save the settings
-@settings_router.post("/")
-def save_settings(settings_data: Settings):
-    if settings_data:
+# configure agent
+@settings_router.post("/{agent_id}")
+def save_settings(agent_id: str, settings: Settings):
+    if settings:
 
-        # clear the settings table first
-        settings_table.truncate()
-
-        # save the new settings
-        settings_table.insert(settings_data.model_dump())
-
-        response = {
-            "created": True,
+        settings_data = {
+            **settings.model_dump(),
+            "agent_id": agent_id
         }
 
-        return JSONResponse(response, status_code=status.HTTP_201_CREATED)
+        settings_table.insert(settings_data)
+
+        response = {
+            "created": True
+        }
+
+        return JSONResponse(response, status_code=200)
+
 
     else:
-
         response = {
-            "created": False,
+            "created": False
         }
 
-        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(response, status_code=400)
 
 
 # get the settings
 @settings_router.get("/{agent_id}")
-def get_settings():
-    settings = settings_table.all()
+def get_settings(agent_id: str):
+    settings = settings_table.get(DBQuery.agent_id == agent_id)
 
     if len(settings) == 0:
         response = {
@@ -47,7 +48,7 @@ def get_settings():
 
     else:
         response = {
-            "settings": settings[0],
+            "settings": settings,
         }
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
@@ -55,12 +56,10 @@ def get_settings():
 
 # update the settings
 @settings_router.put("/{agent_id}")
-def update_settings(settings_data: Settings):
+def update_settings(settings_data: Settings, agent_id: str):
     if settings_data:
 
-        settings_table.truncate()
-
-        settings_table.insert(settings_data.model_dump())
+        settings_table.update(settings_data.model_dump(), DBQuery.agent_id == agent_id)
 
         response = {
             "updated": True,
