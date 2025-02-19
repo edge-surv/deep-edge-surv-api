@@ -1,8 +1,8 @@
 from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
-from models import Settings
+from models import Settings, CameraZoneConfig
 
-from db import settings_table, DBQuery
+from db import settings_table, DBQuery, camera_zones_table
 
 settings_router = APIRouter()
 
@@ -72,6 +72,26 @@ def update_settings(settings_data: Settings, agent_id: str):
 
         response = {
             "created": False,
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+# save the zones
+@settings_router.post("/{camera_id}/config-zone")
+def configure_zones(zone_data: CameraZoneConfig):
+    if zone_data:
+        camera_zones_table.insert(zone_data.model_dump())
+
+        response = {
+            "created": True,
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_201_CREATED)
+    else:
+
+        response = {
+            "created": False
         }
 
         return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)

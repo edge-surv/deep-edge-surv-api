@@ -59,7 +59,7 @@ class Logs(BaseModel):
     time: str
 
 
-class GenerativeAIConfig(BaseModel):
+class CameraZoneConfig(BaseModel):
     id: str = str(uuid4())
-    prompt: str
-    extra_instructions: str
+    camera_id: str
+    coordinates: List[List[int]]
