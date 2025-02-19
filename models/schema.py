@@ -32,7 +32,7 @@ class Camera(BaseModel):
 #  camera settings model
 class CameraSettings(BaseModel):
     id: str = str(uuid4())
-    camera_id: Optional[str] = None
+    camera_id: str
     detection_objects: List[str]
     enabled: bool
     minimum_confidence: int | float

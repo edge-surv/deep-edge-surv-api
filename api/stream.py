@@ -1,46 +1,51 @@
 import cv2
-import supervision as sv
+import numpy as np
 from fastapi import APIRouter, Response
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, JSONResponse
 
 from agents import AIProcessor
 from broker import MQTTBroker
 from db import camera_table, DBQuery, camera_settings_table, camera_zones_table
-from utils import generate_stream_url, save_frame
-import numpy as np
+from utils import save_frame
 
 broker = MQTTBroker()
 
 streaming_router = APIRouter()
 
 
-@streaming_router.get("/{agent_id}/cameras/{camera_id}/surveillance")
-async def live_ai_surveillance(camera_id: str, agent_id: str):
-    box_annotator = sv.BoxAnnotator()
-    label_annotator = sv.LabelAnnotator()
-
+@streaming_router.get("/{camera_id}/surveillance")
+async def live_ai_surveillance(camera_id: str):
     # get the settings for an agent
-    settings = camera_settings_table.get(DBQuery.agent_id == agent_id)
+    cameras_settings = camera_settings_table.search(DBQuery.camera_id == camera_id)[0]
 
-    detection_objects = settings["detection_objects"]
-    minimum_conf = settings["minimum_confidence"]
-    surveillance_enabled = settings["enabled"]
+    if len(cameras_settings) == 0:
+        response = {
+            "cameras_settings":None
+        }
+
+        return JSONResponse(response, status_code=200)
+
+    detection_objects = cameras_settings["detection_objects"]
+    minimum_conf = cameras_settings["minimum_confidence"]
+    surveillance_enabled = cameras_settings["enabled"]
     # counting_enabled = settings["enable_counting"]
-    tracking_enabled = settings["enable_tracking"]
-    save_footage = settings["save_footage"]
+    tracking_enabled = cameras_settings["enable_tracking"]
+    save_footage = cameras_settings["save_footage"]
+    zone_enabled = cameras_settings["enable_zone"]
 
     # extract the zones for the camera
     zone = camera_zones_table.get(DBQuery.camera_id == camera_id)
 
-    coordinates = zone["coordinates"]
+    polygon_coordinates = np.array(zone["coordinates"])
 
-    polygone = np.array(coordinates)
-    polygone_zone = sv.PolygonZone(polygon=polygone)
-    zone_annotator = sv.PolygonZoneAnnotator(
-        zone=polygone_zone, color=sv.Color.YELLOW, thickness=2, text_thickness=2, text_scale=1,
-        display_in_zone_count=False)
+    # create the polygon zone and draw coordinates
 
-    # create a polygone
+    # polygon_coordinates = np.array([
+    #     [1900, 1250],
+    #     [2350, 1250],
+    #     [3500, 2160],
+    #     [1250, 2160]
+    # ])
 
     # get the cameras and extract the RTSP url
     cameras = camera_table.search(DBQuery.id == camera_id)
@@ -57,43 +62,43 @@ async def live_ai_surveillance(camera_id: str, agent_id: str):
     camera_url = 0
 
     # initialize the AIProcessor class
-    ai_processor = AIProcessor(detection_objects, polygone_zone, surveillance_enabled,
-                               minimum_conf=minimum_conf,
-                               tracking_enabled=tracking_enabled)
+    ai_processor = AIProcessor(detection_objects, polygon_coordinates, surveillance_enabled,
+                               minimum_conf=minimum_conf, tracking_enabled=tracking_enabled, zone_enabled=zone_enabled)
 
     cap = cv2.VideoCapture(camera_url)
 
     def generate():
         frame_count = 0
 
-        while True:
-            ret, frame = cap.read()
+        try:
 
-            if not ret:
-                break
-            # process the frame
-            frame_count += 1
+            while True:
+                ret, frame = cap.read()
 
-            results = ai_processor.process_frame(frame)
+                if not ret:
+                    break
+                # process the frame
+                frame_count += 1
 
-            # annotate the zone in the screen
+                results = ai_processor.process_frame(frame)
 
-            annotated_frame = box_annotator.annotate(
-                scene=frame, detections=results["detections"])
+                if save_footage:
+                    # save the labelled frames for logs
 
-            labelled_frame = label_annotator.annotate(
-                scene=annotated_frame, detections=results["detections"], labels=results["labels"])
+                    save_frame(True, results["annotated_frame"], results["detected_classes"], camera_id, frame_count)
 
-            zoned_frame = zone_annotator.annotate(scene=labelled_frame)
+                ret, jpeg = cv2.imencode(".jpg", results["annotated_frame"])
+                if ret:
+                    # Yield each JPEG frame as part of the stream
+                    yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
 
-            if save_footage:
-                # save the labelled frames for logs
+        except Exception as e:
 
-                save_frame(True, zoned_frame, results["detected_classes"], camera_id, frame_count)
+            if cap and cap.isOpened():
+                cap.release()
 
-            ret, jpeg = cv2.imencode(".jpg", zoned_frame)
-            if ret:
-                # Yield each JPEG frame as part of the stream
-                yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
+                return Response({
+                    "stream": False
+                }, status_code=500)
 
     return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
