@@ -1,7 +1,7 @@
 from starlette.responses import JSONResponse
 
-from db import camera_table, DBQuery
-from models import Camera
+from db import camera_table, DBQuery, camera_zones_table, camera_settings_table
+from models import Camera, CameraZoneConfig, CameraSettings
 from utils import get_connected_subnet, scan_rtsp_ports
 from fastapi import APIRouter, status
 
@@ -108,3 +108,71 @@ def discover_cameras():
         }
 
         return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
+
+
+@camera_router.post("/{camera_id}/settings")
+def save_camera_settings(camera_id: str, camera_settings: CameraSettings):
+    if camera_settings:
+
+        camera_settings_data = {
+            **camera_settings.model_dump(),
+            "camera_id": camera_id
+        }
+
+        camera_settings_table.insert(camera_settings_data)
+
+        response = {
+            "created": True
+        }
+
+        return JSONResponse(response, status_code=200)
+
+
+    else:
+        response = {
+            "created": False
+        }
+
+        return JSONResponse(response, status_code=400)
+
+
+@camera_router.put("/{camera_id}/settings")
+def update_camera_settings(settings_data: CameraSettings, camera_id: str):
+    if settings_data:
+
+        camera_settings_table.update(settings_data.model_dump(), DBQuery.camera_id == camera_id)
+
+        response = {
+            "updated": True,
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+
+    else:
+
+        response = {
+            "created": False,
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+# camera zone
+@camera_router.post("/{camera_id}/config-zone")
+def configure_zones(zone_data: CameraZoneConfig):
+    if zone_data:
+        camera_zones_table.insert(zone_data.model_dump())
+
+        response = {
+            "created": True,
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_201_CREATED)
+    else:
+
+        response = {
+            "created": False
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
