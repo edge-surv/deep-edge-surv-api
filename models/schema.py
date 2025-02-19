@@ -11,6 +11,12 @@ class UserData(BaseModel):
     password: str
 
 
+class Agent(BaseModel):
+    id: str = str(uuid4())
+    name: str
+    max_cameras: int = 4
+
+
 # camera model
 class Camera(BaseModel):
     id: str = str(uuid4())
@@ -23,22 +29,24 @@ class Camera(BaseModel):
     provider: str
 
 
-class Agent(BaseModel):
+#  camera settings model
+class CameraSettings(BaseModel):
     id: str = str(uuid4())
-    name: str
-    max_cameras: int = 4
-
-
-# settings model
-class Settings(BaseModel):
-    id: str = str(uuid4())
-    agent_id: Optional[str] = None
+    camera_id: Optional[str] = None
     detection_objects: List[str]
     enabled: bool
     minimum_confidence: int | float
     enable_tracking: bool
     enable_counting: bool
+    enable_zone: bool
     save_footage: bool
+
+
+# camera zone config
+class CameraZoneConfig(BaseModel):
+    id: str = str(uuid4())
+    camera_id: str
+    coordinates: List[List[int]]
 
 
 class Storage(BaseModel):
@@ -57,9 +65,3 @@ class Logs(BaseModel):
     objects_detected: List[str | int]
     date: str
     time: str
-
-
-class CameraZoneConfig(BaseModel):
-    id: str = str(uuid4())
-    camera_id: str
-    coordinates: List[List[int]]

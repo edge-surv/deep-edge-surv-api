@@ -5,7 +5,7 @@ from starlette.responses import StreamingResponse
 
 from agents import AIProcessor
 from broker import MQTTBroker
-from db import camera_table, DBQuery, settings_table, camera_zones_table
+from db import camera_table, DBQuery, camera_settings_table, camera_zones_table
 from utils import generate_stream_url, save_frame
 import numpy as np
 
@@ -20,7 +20,7 @@ async def live_ai_surveillance(camera_id: str, agent_id: str):
     label_annotator = sv.LabelAnnotator()
 
     # get the settings for an agent
-    settings = settings_table.get(DBQuery.agent_id == agent_id)
+    settings = camera_settings_table.get(DBQuery.agent_id == agent_id)
 
     detection_objects = settings["detection_objects"]
     minimum_conf = settings["minimum_confidence"]
