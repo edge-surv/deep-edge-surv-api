@@ -1,6 +1,5 @@
 import supervision as sv
 from ultralytics import YOLO
-from utils import generate_trackers
 
 
 class AIProcessor:

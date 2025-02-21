@@ -3,10 +3,10 @@ import numpy as np
 from fastapi import APIRouter, Response
 from starlette.responses import StreamingResponse, JSONResponse
 
-from agents import AIProcessor
+from agents.processor import AIProcessor
 from broker import MQTTBroker
 from db import camera_table, DBQuery, camera_settings_table, camera_zones_table
-from utils import save_frame
+from utils import save_frame, generate_stream_url
 
 broker = MQTTBroker()
 
@@ -20,7 +20,7 @@ async def live_ai_surveillance(camera_id: str):
 
     if len(cameras_settings) == 0:
         response = {
-            "cameras_settings":None
+            "cameras_settings": None
         }
 
         return JSONResponse(response, status_code=200)
@@ -88,6 +88,52 @@ async def live_ai_surveillance(camera_id: str):
                     save_frame(True, results["annotated_frame"], results["detected_classes"], camera_id, frame_count)
 
                 ret, jpeg = cv2.imencode(".jpg", results["annotated_frame"])
+                if ret:
+                    # Yield each JPEG frame as part of the stream
+                    yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
+
+        except Exception as e:
+
+            if cap and cap.isOpened():
+                cap.release()
+
+                return Response({
+                    "stream": False
+                }, status_code=500)
+
+    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@streaming_router.get("/{camera_id}")
+def stream_camera_feed(camera_id: str):
+    cameras = camera_table.search(DBQuery.id == camera_id)
+
+    if not cameras:
+        response = {
+            'cameras': []
+        }
+        return Response(response, status_code=200)
+
+    camera = next(camera for camera in cameras)
+
+    camera_url = generate_stream_url(camera)
+
+    cap = cv2.VideoCapture(camera_url)
+
+    def generate():
+        frame_count = 0
+
+        try:
+
+            while True:
+                ret, frame = cap.read()
+
+                if not ret:
+                    break
+                # process the frame
+                frame_count += 1
+
+                ret, jpeg = cv2.imencode(".jpg", frame)
                 if ret:
                     # Yield each JPEG frame as part of the stream
                     yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"

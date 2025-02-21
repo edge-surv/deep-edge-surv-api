@@ -14,6 +14,7 @@ class UserData(BaseModel):
 class Agent(BaseModel):
     id: str = str(uuid4())
     name: str
+    running: bool = False
     max_cameras: int = 4
 
 
