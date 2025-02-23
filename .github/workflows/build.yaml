@@ -9,8 +9,8 @@ jobs:
   build_and_publish:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Checkout repository
-        uses: actions/checkout@v4
         run: | 
           docker login --username edg-surv --password ${{ secrets.G_TOKEN }} ghcr.io
           docker build . --tag ghcr.io/edgesurv:latest
