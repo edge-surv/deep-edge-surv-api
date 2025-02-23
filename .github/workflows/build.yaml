@@ -9,10 +9,19 @@ jobs:
   build_and_publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: Checkout repository
-        run: | 
-          docker login --username edg-surv --password ${{ secrets.G_TOKEN }} ghcr.io
-          docker build . --tag ghcr.io/edgesurv:latest
-          docker push ghcr.io/edgesurv:latest
-          
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        env:
+          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+        run: |
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u edge-surv --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build . --tag ghcr.io/edge-surv/deep-edge-surv-api:latest
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/edge-surv/deep-edge-surv-api:latest
