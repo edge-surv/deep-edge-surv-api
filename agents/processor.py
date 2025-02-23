@@ -52,6 +52,7 @@ class AIProcessor:
             # annotate frames with detections
 
             annotated_frame = self.box_annotator.annotate(frame, detections=tracked_detections)
+
             annotated_frame = self.label_annotator.annotate(annotated_frame, detections=tracked_detections,
                                                             labels=labels)
             annotated_frame = self.zone_annotator.annotate(annotated_frame)
@@ -92,8 +93,17 @@ class AIProcessor:
         if self.tracking_enabled:
             tracked_detections = tracker.update_with_detections(filtered_detections)
 
-            if tracked_detections is None:
-                return [], filtered_detections
+            # check if there are no tracked detections
+            if tracked_detections is None or len(tracked_detections.class_id) == 0:
+                # return the filtered detections with no labels
+                labels = [
+                    f"{class_name}"
+                    for class_name, confidence
+                    in zip(filtered_detections['class_name'], filtered_detections.confidence)
+                ]
+                return labels, filtered_detections
+
+            # return the tracked detections with labels
 
             labels = [f"{class_name} #{tracker_id}" for class_name, tracker_id in
                       zip(tracked_detections["class_name"], tracked_detections.tracker_id)]
@@ -101,6 +111,8 @@ class AIProcessor:
             return labels, tracked_detections
 
         else:
+
+            # return the filtered detections with labels if tracking is disabled
 
             labels = [
                 f"{class_name}"
