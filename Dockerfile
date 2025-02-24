@@ -1,5 +1,4 @@
-# Use Ubuntu as base image
-FROM ubuntu:22.04
+
 FROM python:3.12.0-slim
 
 # Avoid prompts from apt
