@@ -4,11 +4,8 @@ from fastapi import APIRouter, Response
 from starlette.responses import StreamingResponse, JSONResponse
 
 from agents.processor import AIProcessor
-from broker import MQTTBroker
 from db import camera_table, DBQuery, camera_settings_table, camera_zones_table
 from utils import save_frame, generate_stream_url
-
-broker = MQTTBroker()
 
 streaming_router = APIRouter()
 

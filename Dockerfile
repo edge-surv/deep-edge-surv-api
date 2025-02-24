@@ -45,4 +45,4 @@ COPY . ${DOCKER_HOME}/
 EXPOSE 8000 1883
 
 # Start Mosquitto and run the FastAPI app
-CMD service mosquitto start && fastapi run app.py --host 0.0.0.0 --port 8000
+CMD fastapi run app.py --host 0.0.0.0 --port 8000
