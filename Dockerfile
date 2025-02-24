@@ -1,25 +1,24 @@
-# the python base image
+# Use the Python slim base image
 FROM python:3.12.0-slim
 
-# setup env variable
+# Set up environment variables
 ENV DOCKER_HOME=/home/app/web
 
-# set work directory
+# Set the working directory
 RUN mkdir -p ${DOCKER_HOME}
 WORKDIR ${DOCKER_HOME}
 
-# python env variables
+# Python environment variables
 ENV PYTHONDONOTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# upgrade pip
+# Upgrade pip
 RUN pip install --upgrade pip
 
-# install nmap and avahi-daemon
-RUN apt-get update && apt-get install -y nmap && rm -rf /var/lib/apt/lists/*
-
-# install gcc, python3-dev, and OpenCV dependencies
-RUN apt-get update && apt-get install -y libgl1 \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    nmap \
+    libgl1 \
     gcc \
     python3-dev \
     libpq-dev \
@@ -29,22 +28,21 @@ RUN apt-get update && apt-get install -y libgl1 \
     libsm6 \
     libxrender1 \
     libxext6 \
+    mosquitto \
+    mosquitto-clients && \
+    rm -rf /var/lib/apt/lists/*
 
-# install mosquitto and mosquitto-clients broker
-RUN apt-get update && apt-get install -y mosquitto mosquitto-clients && rm -rf /var/lib/apt/lists/*
-
-# copy requirements.txt first to leverage Docker cache
+# Copy requirements.txt first to leverage Docker cache
 COPY requirements.txt ${DOCKER_HOME}/
 
-# install dependencies
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy the rest of the application code
+# Copy the rest of the application code
 COPY . ${DOCKER_HOME}/
 
-# expose port for fastapi app
+# Expose ports for FastAPI and Mosquitto
 EXPOSE 8000 1883
 
-# run the app
-CMD service mosquitto start && fastapi run app.py --host 0.0.0.0
-
+# Start Mosquitto and run the FastAPI app
+CMD service mosquitto start && fastapi run app.py --host 0.0.0.0 --port 8000
