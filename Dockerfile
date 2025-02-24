@@ -35,6 +35,11 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements.txt first to leverage Docker cache
 COPY requirements.txt ${DOCKER_HOME}/
 
+RUN mkdir logs
+
+RUN cd logs
+
+RUN mkdir images
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
