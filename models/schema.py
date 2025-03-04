@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -66,3 +66,8 @@ class Logs(BaseModel):
     objects_detected: List[str | int]
     date: str
     time: str
+
+class User(BaseModel):
+    id: Optional[str] = str(uuid4())
+    username: str
+    password: str

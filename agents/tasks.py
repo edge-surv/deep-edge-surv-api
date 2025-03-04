@@ -5,7 +5,7 @@ import cv2
 from db import agents_table, DBQuery
 from utils import save_frame
 
-
+# monitor cameras
 def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, agent_id):
     """
     Continuously process the video stream from a single camera.
@@ -33,3 +33,5 @@ def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, agent_
         logging.exception(f"Error in camera {camera['id']} stream: {e}")
     finally:
         cap.release()
+
+# log all events

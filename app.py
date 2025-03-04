@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 
-from api import camera_router, streaming_router, logs_router, agents_router
+from api import camera_router, streaming_router, logs_router, agents_router, auth_router
+from utils import decode_access_token
+from db import users_table, DBQuery
 
 app = FastAPI()
 
@@ -14,11 +17,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def check_authorization(request: Request, call_next):
+    response = await call_next(request)
+
+    auth_token = request.headers.get("Authorization")
+
+    # decode the token
+
+    decoded_token = decode_access_token(auth_token)
+
+    if decoded_token is None:
+        response = {
+            "authorized": False
+        }
+
+        return JSONResponse(response, status_code=401)
+
+    user = users_table.search(DBQuery.id == decoded_token["id"])
+
+    if user:
+
+        return response
+
+    else:
+
+        response = {
+            "authorized": False
+        }
+
+        return JSONResponse(response, status_code=401)
+
+
 # static files config
-app.mount("/logs", StaticFiles(directory="logs"), name="logs")
+app.mount("/logs", StaticFiles(directory="logs"), name="logs", )
 app.mount("/output", StaticFiles(directory="output"), name="output")
 app.include_router(camera_router, prefix="/api/cameras")
 app.include_router(streaming_router, prefix="/api/streams")
 app.include_router(agents_router, prefix="/api/agents")
+app.include_router(auth_router, prefix="/api/auth/users")
 
 app.include_router(logs_router, prefix="/api/logs")

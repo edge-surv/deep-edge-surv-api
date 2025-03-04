@@ -10,6 +10,8 @@ import psutil
 from db import logs_table
 from models import Logs
 from settings import ROOT_DIR
+import bcrypt
+import jwt
 
 
 # generate camera urls
@@ -182,3 +184,49 @@ def stream_output_video(file_path: str):
 
     with open(file_path, "rb") as video_file:
         yield from video_file
+
+
+# password hasher
+def password_hasher(password: str):
+    """
+    :param password:str
+    :return: hashed_password:str
+    """
+
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+    return hashed_password.decode('utf-8')
+
+
+# password verifier
+def check_password(password: str, hashed_password: str):
+    """
+    :param password:str
+    :param hashed_password:str
+    :return: bool
+    """
+
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+
+# make access_token
+def generate_access_token(payload: dict):
+    """
+    :param payload:dict
+    :return: access_token:str
+    """
+    access_token = jwt.encode(payload, "2334", algorithm="HS256")
+
+    return access_token
+
+
+# decode the access toke
+def decode_access_token(access_token: str):
+    try:
+        decoded_jwt = jwt.decode(access_token, "2334", algorithms=['HS256'])
+
+        return decoded_jwt
+
+    except jwt.exceptions.DecodeError:
+
+        return None
