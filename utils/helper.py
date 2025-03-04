@@ -1,19 +1,15 @@
 import ipaddress
 import os
 import socket
-import uuid
 from datetime import datetime
 
 import cv2
 import nmap
 import psutil
-from ultralytics import YOLO
 
 from db import logs_table
-from models import Storage, Logs
+from models import Logs
 from settings import ROOT_DIR
-
-model = YOLO("ai/yolov8n.pt")
 
 
 # generate camera urls
@@ -23,7 +19,7 @@ def generate_stream_url(camera):
     :param camera: Camera from models
     :return: camera_url:str
     """
-    if camera['provider'] == 'dahua':
+    if camera["provider"] == "dahua":
         return f"rtsp://{camera['username']}:{camera['password']}@{camera['host']}:{camera['port']}/cam/realmonitor?/channel=1&subtype=1"
 
     return None
@@ -33,21 +29,19 @@ def generate_stream_url(camera):
 def scan_rtsp_ports(network_range, ports):
     scanner = nmap.PortScanner()
 
-    scanner.scan(network_range, ports, arguments='-Pn -T4 --min-parallelism 10 -n')
+    scanner.scan(network_range, ports, arguments="-Pn -T4 --min-parallelism 10 -n")
 
     rtsp_cameras = []
 
     # loop through the scanned ports
     for host in scanner.all_hosts():
         # to replace with port 554
-        if 'tcp' in scanner[host] and 554 in scanner[host]['tcp']:
-            port_info = scanner[host]['tcp'][554]
-            if port_info['state'] == 'open':
-                rtsp_cameras.append({
-                    'host': host,
-                    'state': port_info['state'],
-                    'port': 554
-                })
+        if "tcp" in scanner[host] and 554 in scanner[host]["tcp"]:
+            port_info = scanner[host]["tcp"][554]
+            if port_info["state"] == "open":
+                rtsp_cameras.append(
+                    {"host": host, "state": port_info["state"], "port": 554}
+                )
 
     return rtsp_cameras
 
@@ -82,8 +76,12 @@ def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
     if tracking_enabled:
         tracked_detections = tracker.update_with_detections(filtered_detections)
 
-        labels = [f"{class_name} #{tracker_id}" for class_name, tracker_id in
-                  zip(tracked_detections["class_name"], tracked_detections.tracker_id)]
+        labels = [
+            f"{class_name} #{tracker_id}"
+            for class_name, tracker_id in zip(
+                tracked_detections["class_name"], tracked_detections.tracker_id
+            )
+        ]
 
         return labels, tracked_detections
 
@@ -91,8 +89,9 @@ def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
 
         labels = [
             f"{class_name}"
-            for class_name, confidence
-            in zip(filtered_detections['class_name'], filtered_detections.confidence)
+            for class_name, confidence in zip(
+                filtered_detections["class_name"], filtered_detections.confidence
+            )
         ]
 
         return labels, filtered_detections
@@ -137,6 +136,7 @@ def generate_count():
 #
 #         return False, None
 #
+
 
 # save frames
 def save_frame(object_detected, frame, detected_classes, camera_id, frame_count):

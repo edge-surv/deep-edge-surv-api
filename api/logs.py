@@ -10,15 +10,11 @@ def get_logs():
     logs = logs_table.all()
 
     if len(logs) < 1:
-        response = {
-            "logs": []
-        }
+        response = {"logs": []}
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
 
     else:
-        response = {
-            "logs": logs
-        }
+        response = {"logs": logs}
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)

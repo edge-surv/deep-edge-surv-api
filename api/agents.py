@@ -1,3 +1,4 @@
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -6,10 +7,14 @@ from starlette.responses import JSONResponse
 
 from agents.processor import AIProcessor
 from agents.tasks import monitor_camera_stream
-from db import agents_table, DBQuery, camera_table, camera_settings_table, camera_zones_table
+from db import (
+    agents_table,
+    DBQuery,
+    camera_table,
+    camera_settings_table,
+    camera_zones_table,
+)
 from models import Agent
-from utils import generate_stream_url
-import threading
 
 agents_router = APIRouter()
 
@@ -23,15 +28,11 @@ def get_agents():
     agents = agents_table.all()
 
     if len(agents) == 0:
-        response = {
-            "agents": []
-        }
+        response = {"agents": []}
 
         return JSONResponse(response, status_code=200)
 
-    response = {
-        "agents": agents
-    }
+    response = {"agents": agents}
 
     return JSONResponse(response, status_code=200)
 
@@ -41,17 +42,13 @@ def create_agent(agent_data: Agent):
     if agent_data:
         agents_table.insert(agent_data.model_dump())
 
-        response = {
-            "created": True
-        }
+        response = {"created": True}
 
         return JSONResponse(response, status_code=201)
 
     else:
 
-        response = {
-            "created": False
-        }
+        response = {"created": False}
 
         return JSONResponse(response, status_code=400)
 
@@ -80,9 +77,7 @@ def update_agent(agent_id: str, agent_data: Agent):
 
     else:
 
-        response = {
-            "updated": False
-        }
+        response = {"updated": False}
 
         return JSONResponse(response, status_code=400)
 
@@ -133,7 +128,7 @@ def start_agent(agent_id: str, background_tasks: BackgroundTasks):
             surveillance_enabled,
             minimum_conf=minimum_conf,
             tracking_enabled=tracking_enabled,
-            zone_enabled=zone_enabled
+            zone_enabled=zone_enabled,
         )
 
         # Schedule each camera stream as a background task.
@@ -143,7 +138,7 @@ def start_agent(agent_id: str, background_tasks: BackgroundTasks):
             ai_processor,
             camera_url,
             cameras_settings["save_footage"],
-            agent_id
+            agent_id,
         )
 
         # add the task to the list of active agent
