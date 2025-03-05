@@ -38,13 +38,19 @@ def login(login_data: User):
                 return JSONResponse(response, status_code=status.HTTP_200_OK)
 
         else:
-            response = {"login": False, "message": "User does not exist"}
+            response = {
+                "login": False,
+                "message": "User does not exist",
+            }
 
             return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
 
     else:
 
-        response = {"login": False, "message": "Invalid login credentials"}
+        response = {
+            "login": False,
+            "message": "Invalid login credentials",
+        }
 
         return JSONResponse(response, status_code=status.HTTP_401_UNAUTHORIZED)
 
@@ -57,7 +63,10 @@ def signup(sign_up_data: User):
         user = users_table.search(DBQuery.username == sign_up_data.username)
 
         if user:
-            response = {"created": False, "message": "User already exists"}
+            response = {
+                "created": False,
+                "message": "User already exists",
+            }
 
             return JSONResponse(response, status_code=status.HTTP_409_CONFLICT)
 
@@ -68,7 +77,10 @@ def signup(sign_up_data: User):
 
             users_table.insert(sign_up_data.model_dump())
 
-            response = {"created": True, "message": "User created successfully"}
+            response = {
+                "created": True,
+                "message": "User created successfully",
+            }
 
             return JSONResponse(response, status_code=status.HTTP_201_CREATED)
 
@@ -89,6 +101,8 @@ def delete_user(user_id: str):
 def get_users():
     users = users_table.all()
 
-    response = {"users": users}
+    response = {
+        "users": users,
+    }
 
     return JSONResponse(response, status_code=status.HTTP_200_OK)
