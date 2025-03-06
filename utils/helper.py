@@ -9,7 +9,7 @@ import psutil
 
 from db import logs_table
 from models import Logs
-from settings import ROOT_DIR
+from config import ROOT_DIR
 import bcrypt
 import jwt
 
@@ -31,7 +31,8 @@ def generate_stream_url(camera):
 def scan_rtsp_ports(network_range, ports):
     scanner = nmap.PortScanner()
 
-    scanner.scan(network_range, ports, arguments="-Pn -T4 --min-parallelism 10 -n")
+    scanner.scan(network_range, ports,
+                 arguments="-Pn -T4 --min-parallelism 10 -n")
 
     rtsp_cameras = []
 
@@ -60,7 +61,8 @@ def get_connected_subnet():
                 ip = addr.address
                 netmask = addr.netmask
                 if ip and netmask and ip != "127.0.0.1":
-                    subnet = ipaddress.IPv4Network(f"{ip}/{netmask}", strict=False)
+                    subnet = ipaddress.IPv4Network(
+                        f"{ip}/{netmask}", strict=False)
                     return str(subnet)
     return None
 
@@ -76,7 +78,8 @@ def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
     """
     # check if tracking is enabled and update detections with tracker
     if tracking_enabled:
-        tracked_detections = tracker.update_with_detections(filtered_detections)
+        tracked_detections = tracker.update_with_detections(
+            filtered_detections)
 
         labels = [
             f"{class_name} #{tracker_id}"
@@ -193,9 +196,9 @@ def password_hasher(password: str):
     :return: hashed_password:str
     """
 
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
-    return hashed_password.decode('utf-8')
+    return hashed_password.decode("utf-8")
 
 
 # password verifier
@@ -206,7 +209,7 @@ def check_password(password: str, hashed_password: str):
     :return: bool
     """
 
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 # make access_token
@@ -223,7 +226,7 @@ def generate_access_token(payload: dict):
 # decode the access toke
 def decode_access_token(access_token: str):
     try:
-        decoded_jwt = jwt.decode(access_token, "2334", algorithms=['HS256'])
+        decoded_jwt = jwt.decode(access_token, "2334", algorithms=["HS256"])
 
         return decoded_jwt
 

@@ -16,7 +16,7 @@ class AIProcessor:
         tracking_enabled=True,
         zone_enabled=False,
     ):
-        self.model = YOLO("ai/yolov8n.pt")
+        self.model = YOLO("yolov8n.pt")
         self.zone_enabled = zone_enabled
         self.model.fuse()
         self.detection_objects = detection_objects
@@ -37,7 +37,8 @@ class AIProcessor:
         :param frame:
         :return: dict
         """
-        results = self.model.predict(frame, conf=self.minimum_conf, iou=0.45)[0]
+        results = self.model.predict(
+            frame, conf=self.minimum_conf, iou=0.45)[0]
         detections = sv.Detections.from_ultralytics(results)
 
         # filter detections based on the detection objects
@@ -111,7 +112,8 @@ class AIProcessor:
 
         # check if tracking is enabled and update detections with tracker
         if self.tracking_enabled:
-            tracked_detections = tracker.update_with_detections(filtered_detections)
+            tracked_detections = tracker.update_with_detections(
+                filtered_detections)
 
             # check if there are no tracked detections
             if tracked_detections is None or len(tracked_detections.class_id) == 0:
