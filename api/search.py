@@ -71,19 +71,23 @@ async def search_items(
             save_output=save_output,
         )
 
+        # Check if search was successful
+        if results["search"] == False:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "message": "Search failed",
+                    "search": False,
+                },
+            )
+
         # Construct response
         response = {
-            "status": "success",
-            "filename": unique_filename,
-            "prompt": prompt,
+            "search": True,
         }
-
-        if save_output:
-            output_filename = f"{prompt.replace(' ', '_')}_results.mp4"
-            output_path = f"{ROOT_DIR}/{output_filename}"
-            response["output_video"] = output_path
-        else:
-            response["timestamps"] = results
+        response["timestamps"] = results["timestamps"]
+        response["total_detections"] = results["total_detections"]
+        response["output_files"] = results["output_files"]
 
         return JSONResponse(
             status_code=200,

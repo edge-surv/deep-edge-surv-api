@@ -1,5 +1,5 @@
 
-vehicles.mp4
+
 output
 ai
 **/__pycache__/
@@ -8,3 +8,4 @@ src_videos
 logs
 .env
 notebooks
+uploads

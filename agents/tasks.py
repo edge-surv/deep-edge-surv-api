@@ -7,6 +7,8 @@ from utils import save_frame
 from ultralytics import YOLO
 import supervision as sv
 from config import ROOT_DIR
+import uuid
+import os
 
 
 # monitor cameras
@@ -47,9 +49,6 @@ def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, agent_
         cap.release()
 
 
-# video search of the items
-
-
 def search_video(
     prompt: str, source_video: str, confidence: float = 0.25, save_output: bool = True
 ):
@@ -63,16 +62,16 @@ def search_video(
         save_output (bool): Whether to save the annotated video
 
     Returns:
-        list: Timestamps of detected objects matching the prompt
+        dict: Frames and timestamps where objects were detected
     """
-    # Initialize annotators
+    # Initialize annotators and trackers
     label_annotator = sv.LabelAnnotator()
     box_annotator = sv.BoxAnnotator()
+    tracker = sv.ByteTrack()
 
     # Initialize YOLO World model
     model = YOLO("yolov8s-worldv2.pt")
-
-    # Set the search prompt
+    model.fuse()
     model.set_classes([prompt])
 
     # Setup video processing
@@ -83,44 +82,81 @@ def search_video(
     width, height = video_info.resolution_wh
     frame_area = width * height
 
-    # Prepare output video if saving is enabled
-    if save_output:
-        output_path = (
-            f"{ROOT_DIR}/output/{prompt.replace(' ', '_')}_results.mp4"
-        )
-        with sv.VideoSink(target_path=output_path, video_info=video_info) as sink:
-            for frame_idx, frame in enumerate(frame_generator):
-                # Run inference
-                results = model.predict(frame, conf=confidence)[0]
-                detections = sv.Detections.from_ultralytics(results).with_nms(
-                    threshold=0.1
+    detected_frames = []
+    frame_timestamps = []
+    output_files = []
+    frame_skip = 15  # Process every 30th frame
+
+    # Ensure output directory exists
+    OUTPUT_DIR = f"{ROOT_DIR}/output/images"
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    output_path = f"{ROOT_DIR}/output/videos/{uuid.uuid4()}.mp4"
+
+    with sv.VideoSink(target_path=output_path, video_info=video_info) as sink:
+
+        for frame_idx, frame in enumerate(frame_generator):
+            # Skip frames based on frame_skip
+            if frame_idx % frame_skip != 0:
+                continue
+
+            # Run inference
+            results = model.predict(frame, conf=confidence, iou=0.45)[0]
+            detections = sv.Detections.from_ultralytics(results)
+
+            # Filter out large detections (likely false positives)
+            filtered_detections = detections[(
+                detections.area / frame_area) < 0.10]
+
+            if len(filtered_detections) > 0:
+                # Generate labels
+                labels = [prompt] * len(filtered_detections)
+
+                # Annotate frame
+                annotated_frame = frame.copy()
+                annotated_frame = box_annotator.annotate(
+                    annotated_frame, filtered_detections
+                )
+                annotated_frame = label_annotator.annotate(
+                    annotated_frame, filtered_detections, labels=labels
                 )
 
-                # Filter out large detections (likely false positives)
-                detections = detections[(detections.area / frame_area) < 0.10]
+                # Store frame and timestamp
+                detected_frames.append(annotated_frame)
+                frame_timestamps.append(frame_idx / video_info.fps)
 
-                if len(detections) > 0:
-                    # Annotate frame with detections
-                    annotated_frame = frame.copy()
-                    annotated_frame = box_annotator.annotate(
-                        annotated_frame, detections
-                    )
-                    annotated_frame = label_annotator.annotate(
-                        annotated_frame, detections
-                    )
+                # Save output if enabled
+                if save_output:
+                    frame_uuid = str(uuid.uuid4())
+                    output_file = f"{frame_uuid}.jpg"
+                    output_path = os.path.join(
+                        OUTPUT_DIR, output_file)
+
+                    # save the video
                     sink.write_frame(annotated_frame)
-    else:
-        # Just process without saving
-        detections_timestamps = []
-        for frame_idx, frame in enumerate(frame_generator):
-            results = model.infer(frame, confidence=confidence)
-            detections = sv.Detections.from_inference(
-                results).with_nms(threshold=0.1)
-            detections = detections[(detections.area / frame_area) < 0.10]
 
-            if len(detections) > 0:
-                # Calculate timestamp
-                timestamp = frame_idx / video_info.fps
-                detections_timestamps.append(timestamp)
+                    try:
+                        # Ensure the output directory exists
+                        os.makedirs(os.path.dirname(
+                            output_path), exist_ok=True)
+                        # write the frame to disk
+                        success = cv2.imwrite(output_path, annotated_frame)
 
-        return detections_timestamps
+                        if success:
+                            # append the files of the photos
+                            output_files.append(output_path)
+                        else:
+                            return {
+                                "search": False,
+                            }
+                    except Exception as e:
+                        logging.error(f"Error saving frame: {e}")
+                        return {
+                            "search": False,
+                        }
+
+    return {
+        "timestamps": frame_timestamps,
+        "total_detections": len(detected_frames),
+        "output_files": output_files,
+        "search": True
+    }
