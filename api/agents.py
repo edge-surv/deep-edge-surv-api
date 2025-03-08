@@ -1,3 +1,6 @@
+import asyncio
+import json
+import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -7,109 +10,60 @@ from starlette.responses import JSONResponse
 
 from agents.processor import AIProcessor
 from agents.tasks import monitor_camera_stream
-from db import (
-    agents_table,
-    DBQuery,
-    camera_table,
-    camera_settings_table,
-    camera_zones_table,
-)
-from models import Agent
+from db import DBQuery, camera_settings_table, camera_table, camera_zones_table
 
 agents_router = APIRouter()
 
-executor = ThreadPoolExecutor(max_workers=10)
-
-active_agents = {}
-
-
-@agents_router.get("/")
-def get_agents():
-    agents = agents_table.all()
-
-    if len(agents) == 0:
-        response = {"agents": []}
-
-        return JSONResponse(response, status_code=200)
-
-    response = {"agents": agents}
-
-    return JSONResponse(response, status_code=200)
+AGENT_STATUS_FILE = "agents/status.json"
+active_tasks = []
+executor = ThreadPoolExecutor(max_workers=4)
 
 
-@agents_router.post("/")
-def create_agent(agent_data: Agent):
-    if agent_data:
-        agents_table.insert(agent_data.model_dump())
-
-        response = {"created": True}
-
-        return JSONResponse(response, status_code=201)
-
-    else:
-
-        response = {"created": False}
-
-        return JSONResponse(response, status_code=400)
+def get_agent_status():
+    if not os.path.exists(AGENT_STATUS_FILE):
+        return {"running": False}
+    with open(AGENT_STATUS_FILE, "r") as f:
+        return json.load(f)
 
 
-@agents_router.delete("/{agent_id}")
-def delete_agent(agent_id: str):
-    agents_table.remove(DBQuery.id == agent_id)
-
-    response = {
-        "deleted": True,
-    }
-
-    return JSONResponse(response, status_code=200)
+def set_agent_status(running: bool):
+    with open(AGENT_STATUS_FILE, "w") as f:
+        json.dump({"running": running}, f)
 
 
-@agents_router.put("/{agent_id}")
-def update_agent(agent_id: str, agent_data: Agent):
-    if agent_data:
-        agents_table.update(agent_data, DBQuery.id == agent_id)
+@agents_router.post("/start")
+async def start_agent(background_tasks: BackgroundTasks):
+    global active_tasks
 
-        response = {
-            "updated": True,
-        }
+    status = get_agent_status()
+    if status["running"]:
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Process already running", "running": True},
+        )
 
-        return JSONResponse(response, status_code=200)
-
-    else:
-
-        response = {"updated": False}
-
-        return JSONResponse(response, status_code=400)
-
-
-# start agent
-@agents_router.post("/{agent_id}/start")
-def start_agent(agent_id: str, background_tasks: BackgroundTasks):
-    global active_agents
-
-    # update agent status to true
-    agents_table.update({"running": True}, DBQuery.id == agent_id)
-
-    if agent_id in active_agents:
-        return JSONResponse({"running": True}, status_code=400)
-    # get cameras for that agent
-    cameras = camera_table.search(DBQuery.agent_id == agent_id)
+    # Get all cameras
+    cameras = camera_table.all()
 
     if not cameras:
-        return JSONResponse({"started": False}, status_code=400)
+        return JSONResponse(
+            content={"started": False},
+            status_code=400,
+        )
 
-    # add the agent to the active agents
+    set_agent_status(True)
 
-    active_agents[agent_id] = []
+    print("Started the agent")
 
     for camera in cameras:
         # create a stop flag
         stop_flag = threading.Event()
 
-        # camera_url = generate_stream_url(camera)
-        camera_url = 0
-        # Retrieve camera settings.
+        # Retrieve camera settings
         cameras_settings = camera_settings_table.get(DBQuery.camera_id == camera["id"])
+        if not cameras_settings:
+            continue
+
         detection_objects = cameras_settings["detection_objects"]
         minimum_conf = cameras_settings["minimum_confidence"]
         surveillance_enabled = cameras_settings["enabled"]
@@ -117,11 +71,14 @@ def start_agent(agent_id: str, background_tasks: BackgroundTasks):
         save_footage = cameras_settings["save_footage"]
         zone_enabled = cameras_settings["enable_zone"]
 
-        # Retrieve zone coordinates for the camera.
+        # Retrieve zone coordinates for the camera
         zone = camera_zones_table.get(DBQuery.camera_id == camera["id"])
+        if not zone:
+            continue
+
         polygon_coordinates = np.array(zone["coordinates"])
 
-        # Initialize the AI processor using your existing logic.
+        # Initialize the AI processor
         ai_processor = AIProcessor(
             detection_objects,
             polygon_coordinates,
@@ -131,40 +88,57 @@ def start_agent(agent_id: str, background_tasks: BackgroundTasks):
             zone_enabled=zone_enabled,
         )
 
-        # Schedule each camera stream as a background task.
+        camera_url = 0  # Replace with actual camera URL generation logic
+
+        # Schedule camera stream processing
         future = executor.submit(
             monitor_camera_stream,
             camera,
             ai_processor,
             camera_url,
-            cameras_settings["save_footage"],
-            agent_id,
+            save_footage,
+            stop_flag,
         )
 
-        # add the task to the list of active agent
+        active_tasks.append((future, stop_flag))
 
-        active_agents[agent_id].append((future, stop_flag))
+    return JSONResponse(
+        {
+            "started": True,
+            "cameras": len(cameras),
+        },
+        status_code=200,
+    )
 
-    return JSONResponse({"started": True}, status_code=200)
 
+@agents_router.post("/stop")
+async def stop_agent():
+    global active_tasks, executor
 
-# stop the agent
-@agents_router.post("/{agent_id}/stop")
-def stop_agent(agent_id: str):
-    global active_agents
+    status = get_agent_status()
+    if not status["running"]:
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Process is not running", "running": False},
+        )
 
-    # update agent status to false
-    agents_table.update({"running": False}, DBQuery.id == agent_id)
-    if agent_id not in active_agents:
-        return JSONResponse({"message": "Agent not running"}, status_code=400)
+    set_agent_status(False)
 
-    for future, stop_flag in active_agents[agent_id]:
-        # stop the thread
+    # Stop all running tasks
+    for future, stop_flag in active_tasks:
         stop_flag.set()
-
-        # cancel the future
         future.cancel()
 
-    del active_agents[agent_id]
+    # Clear the tasks list
+    active_tasks.clear()
 
-    return JSONResponse({"stopped": True}, status_code=200)
+    # Shutdown the current executor and create a new one
+    executor.shutdown(wait=False)
+    executor = ThreadPoolExecutor(max_workers=4)
+
+    return JSONResponse(
+        {
+            "stopped": True,
+        },
+        status_code=200,
+    )

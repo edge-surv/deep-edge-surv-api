@@ -78,7 +78,7 @@ def get_all_cameras():
     else:
 
         response = {
-            "cameras": []
+            "cameras": [],
         }
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
@@ -96,7 +96,7 @@ def discover_cameras():
     if len(available_cameras) > 0:
 
         response = {
-            "cameras": available_cameras
+            "cameras": available_cameras,
         }
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
@@ -104,7 +104,7 @@ def discover_cameras():
     else:
 
         response = {
-            "cameras": None
+            "cameras": None,
         }
 
         return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
@@ -116,13 +116,13 @@ def save_camera_settings(camera_id: str, camera_settings: CameraSettings):
 
         camera_settings_data = {
             **camera_settings.model_dump(),
-            "camera_id": camera_id
+            "camera_id": camera_id,
         }
 
         camera_settings_table.insert(camera_settings_data)
 
         response = {
-            "created": True
+            "created": True,
         }
 
         return JSONResponse(response, status_code=200)
@@ -130,7 +130,7 @@ def save_camera_settings(camera_id: str, camera_settings: CameraSettings):
 
     else:
         response = {
-            "created": False
+            "created": False,
         }
 
         return JSONResponse(response, status_code=400)
@@ -172,7 +172,7 @@ def configure_zones(zone_data: CameraZoneConfig):
     else:
 
         response = {
-            "created": False
+            "created": False,
         }
 
         return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)

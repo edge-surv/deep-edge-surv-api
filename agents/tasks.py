@@ -1,18 +1,21 @@
 import logging
+import os
+import smtplib
+import uuid
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import cv2
-
-from db import agents_table, DBQuery
-from utils import save_frame
-from ultralytics import YOLO
 import supervision as sv
+from ultralytics import YOLO
+
 from config import ROOT_DIR
-import uuid
-import os
+from utils import save_frame
 
 
 # monitor cameras
-def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, agent_id):
+def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, stop_flag):
     """
     Continuously process the video stream from a single camera.
     """
@@ -23,7 +26,7 @@ def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, agent_
         return
 
     try:
-        while agents_table.get(DBQuery.id == agent_id)["running"]:
+        while not stop_flag.is_set():
             ret, frame = cap.read()
             if not ret:
                 logging.warning(
@@ -104,8 +107,7 @@ def search_video(
             detections = sv.Detections.from_ultralytics(results)
 
             # Filter out large detections (likely false positives)
-            filtered_detections = detections[(
-                detections.area / frame_area) < 0.10]
+            filtered_detections = detections[(detections.area / frame_area) < 0.10]
 
             if len(filtered_detections) > 0:
                 # Generate labels
@@ -128,16 +130,14 @@ def search_video(
                 if save_output:
                     frame_uuid = str(uuid.uuid4())
                     output_file = f"{frame_uuid}.jpg"
-                    output_path = os.path.join(
-                        OUTPUT_DIR, output_file)
+                    output_path = os.path.join(OUTPUT_DIR, output_file)
 
                     # save the video
                     sink.write_frame(annotated_frame)
 
                     try:
                         # Ensure the output directory exists
-                        os.makedirs(os.path.dirname(
-                            output_path), exist_ok=True)
+                        os.makedirs(os.path.dirname(output_path), exist_ok=True)
                         # write the frame to disk
                         success = cv2.imwrite(output_path, annotated_frame)
 
@@ -158,5 +158,46 @@ def search_video(
         "timestamps": frame_timestamps,
         "total_detections": len(detected_frames),
         "output_files": output_files,
-        "search": True
+        "search": True,
     }
+
+
+def send_email(
+    sender_email, sender_password, recipient_email, subject, body, attachment_path=None
+):
+    try:
+        # Create message container
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
+        msg["Subject"] = subject
+
+        # Add body to email
+        msg.attach(MIMEText(body, "plain"))
+
+        # Attach image if provided
+        if attachment_path:
+            with open(attachment_path, "rb") as attachment:
+                part = MIMEImage(attachment.read())
+                part.add_header(
+                    "Content-Disposition",
+                    "attachment",
+                    filename=os.path.basename(attachment_path),
+                )
+                msg.attach(part)
+
+        # Create SMTP session
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+
+        # Login to the server
+        server.login(sender_email, sender_password)
+
+        # Send email
+        server.send_message(msg)
+        server.quit()
+
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send email: {e}")
+        return False

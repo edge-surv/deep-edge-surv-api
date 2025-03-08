@@ -21,7 +21,6 @@ class Agent(BaseModel):
 # camera model
 class Camera(BaseModel):
     id: str = str(uuid4())
-    agent_id: str
     host: str
     port: int
     name: str
@@ -41,6 +40,8 @@ class CameraSettings(BaseModel):
     enable_counting: bool
     enable_zone: bool
     save_footage: bool
+    start_time: str
+    end_time: str
 
 
 # camera zone config
