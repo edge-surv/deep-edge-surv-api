@@ -9,6 +9,7 @@ camera_zones_table = db.table("camera_zones")
 logs_table = db.table("logs")
 agents_table = db.table("agents")
 users_table = db.table("users")
+emails_details_table = db.table("email_details")
 
 # query
 DBQuery = Query()

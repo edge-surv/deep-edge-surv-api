@@ -1,9 +1,8 @@
-from fastapi import APIRouter
-from fastapi import status
+from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-from db import users_table, DBQuery
-from models import User
+from db import DBQuery, emails_details_table, users_table
+from models import EmailDetail, User
 from utils import check_password, generate_access_token, password_hasher
 
 auth_router = APIRouter()
@@ -106,3 +105,40 @@ def get_users():
     }
 
     return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+
+@auth_router.post("/emails")
+def create_email_details(email_data: EmailDetail):
+
+    if email_data:
+        # insert the emails for configuration
+        emails_details_table.insert(email_data.model_dump())
+
+        return JSONResponse(
+            {
+                "message": "Emails added successfully",
+                "created": True,
+            },
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    else:
+        return JSONResponse(
+            {
+                "message": "Invalid email data",
+                "created": False,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+@auth_router.get("/emails")
+def get_email_details():
+    email_details = emails_details_table.all()
+
+    return JSONResponse(
+        {
+            "emails": email_details,
+        },
+        status_code=status.HTTP_200_OK,
+    )

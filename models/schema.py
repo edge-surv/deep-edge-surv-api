@@ -68,7 +68,13 @@ class Logs(BaseModel):
     date: str
     time: str
 
+
 class User(BaseModel):
     id: Optional[str] = str(uuid4())
     username: str
     password: str
+
+
+class EmailDetail(BaseModel):
+    id: Optional[str] = str(uuid4())
+    emails: List[str]
