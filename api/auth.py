@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from db import DBQuery, emails_details_table, users_table
 from models import EmailDetail, User
 from utils import check_password, generate_access_token, password_hasher
+from utils.helper import decode_access_token
 
 auth_router = APIRouter()
 
@@ -12,7 +13,7 @@ auth_router = APIRouter()
 def login(login_data: User):
     if login_data:
         # check if user exists
-        user = users_table.search(DBQuery.username == login_data.username)
+        user = users_table.search(DBQuery.email == login_data.email)
 
         if user:
             user = user[0]
@@ -22,7 +23,7 @@ def login(login_data: User):
             if password_correct:
                 payload = {
                     "id": user["id"],
-                    "username": user["username"],
+                    "email": user["email"],
                 }
 
                 # create access token
@@ -45,7 +46,6 @@ def login(login_data: User):
             return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
 
     else:
-
         response = {
             "login": False,
             "message": "Invalid login credentials",
@@ -59,7 +59,7 @@ def login(login_data: User):
 def signup(sign_up_data: User):
     if sign_up_data:
         # check if user exists
-        user = users_table.search(DBQuery.username == sign_up_data.username)
+        user = users_table.search(DBQuery.email == sign_up_data.email)
 
         if user:
             response = {
@@ -70,7 +70,6 @@ def signup(sign_up_data: User):
             return JSONResponse(response, status_code=status.HTTP_409_CONFLICT)
 
         else:
-
             # hash the password
             sign_up_data.password = password_hasher(sign_up_data.password)
 
@@ -82,6 +81,66 @@ def signup(sign_up_data: User):
             }
 
             return JSONResponse(response, status_code=status.HTTP_201_CREATED)
+
+
+@auth_router.post("/forgot-password")
+def forgot_password(email: str):
+    # check if user exists
+    user = users_table.search(DBQuery.email == email)
+
+    if user:
+        user = user[0]
+        payload = {
+            "id": user["id"],
+            "email": user["email"],
+        }
+
+        # create reset token
+        reset_token = generate_access_token(payload)
+
+        response = {
+            "success": True,
+            "reset_token": reset_token,
+            "message": "Password reset link sent to email",
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+    response = {
+        "success": False,
+        "message": "User with this email does not exist",
+    }
+
+    return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
+
+
+@auth_router.post("/reset-password")
+def reset_password(reset_token: str, new_password: str):
+    # Verify reset token and get user
+    try:
+        payload = decode_access_token(reset_token)
+        user = users_table.search(DBQuery.id == payload["id"])
+
+        if user:
+            user = user[0]
+            # Update password
+            hashed_password = password_hasher(new_password)
+            users_table.update({"password": hashed_password}, DBQuery.id == user["id"])
+
+            response = {
+                "success": True,
+                "message": "Password reset successful",
+            }
+
+            return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+    except:
+        response = {
+            "success": False,
+            "message": "Invalid or expired reset token",
+        }
+
+        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 # delete the user
@@ -109,7 +168,6 @@ def get_users():
 
 @auth_router.post("/emails")
 def create_email_details(email_data: EmailDetail):
-
     if email_data:
         # insert the emails for configuration
         emails_details_table.insert(email_data.model_dump())

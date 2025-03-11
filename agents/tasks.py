@@ -52,6 +52,7 @@ def monitor_camera_stream(camera, ai_processor, camera_url, save_footage, stop_f
         cap.release()
 
 
+# video search task for the agent
 def search_video(
     prompt: str, source_video: str, confidence: float = 0.25, save_output: bool = True
 ):

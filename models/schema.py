@@ -71,7 +71,7 @@ class Logs(BaseModel):
 
 class User(BaseModel):
     id: Optional[str] = str(uuid4())
-    username: str
+    email: str
     password: str
 
 

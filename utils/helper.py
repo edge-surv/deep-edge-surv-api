@@ -3,15 +3,15 @@ import os
 import socket
 from datetime import datetime
 
+import bcrypt
 import cv2
+import jwt
 import nmap
 import psutil
 
+from config import ROOT_DIR
 from db import logs_table
 from models import Logs
-from config import ROOT_DIR
-import bcrypt
-import jwt
 
 
 # generate camera urls
@@ -21,7 +21,7 @@ def generate_stream_url(camera):
     :param camera: Camera from models
     :return: camera_url:str
     """
-    if camera["provider"] == "dahua":
+    if camera["provider"] == "Dahua":
         return f"rtsp://{camera['username']}:{camera['password']}@{camera['host']}:{camera['port']}/cam/realmonitor?/channel=1&subtype=1"
 
     return None
@@ -202,10 +202,9 @@ def password_hasher(password: str):
 
 
 # password verifier
-def check_password(password: str, hashed_password: str):
+def check_password(password: str, hashed_password):
     """
-    :param password:str
-    :param hashed_password:str
+    :param password:str    :param hashed_password:
     :return: bool
     """
 
