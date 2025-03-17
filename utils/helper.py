@@ -31,8 +31,7 @@ def generate_stream_url(camera):
 def scan_rtsp_ports(network_range, ports):
     scanner = nmap.PortScanner()
 
-    scanner.scan(network_range, ports,
-                 arguments="-Pn -T4 --min-parallelism 10 -n")
+    scanner.scan(network_range, ports, arguments="-Pn -T4 --min-parallelism 10 -n")
 
     rtsp_cameras = []
 
@@ -61,8 +60,7 @@ def get_connected_subnet():
                 ip = addr.address
                 netmask = addr.netmask
                 if ip and netmask and ip != "127.0.0.1":
-                    subnet = ipaddress.IPv4Network(
-                        f"{ip}/{netmask}", strict=False)
+                    subnet = ipaddress.IPv4Network(f"{ip}/{netmask}", strict=False)
                     return str(subnet)
     return None
 
@@ -78,8 +76,7 @@ def generate_trackers(filtered_detections, tracking_enabled: bool, tracker):
     """
     # check if tracking is enabled and update detections with tracker
     if tracking_enabled:
-        tracked_detections = tracker.update_with_detections(
-            filtered_detections)
+        tracked_detections = tracker.update_with_detections(filtered_detections)
 
         labels = [
             f"{class_name} #{tracker_id}"
@@ -172,7 +169,7 @@ def save_frame(object_detected, frame, detected_classes, camera_id, frame_count)
         logs_table.insert(logs_data.model_dump())
 
         # write the files to the dir to
-        frame_name = os.path.join(ROOT_DIR, f"logs/images/{timestamp}.jpg")
+        frame_name = os.path.join(ROOT_DIR, f"output/images/logs/{timestamp}.jpg")
 
         cv2.imwrite(frame_name, frame)
 

@@ -56,7 +56,7 @@ def update_camera(camera_data: Camera, camera_id: str):
     else:
 
         response = {
-            "updated": False
+            "updated": False,
         }
 
         return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
@@ -70,7 +70,7 @@ def get_all_cameras():
     if len(cameras) > 0:
 
         response = {
-            "cameras": cameras
+            "cameras": cameras,
         }
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
@@ -127,7 +127,6 @@ def save_camera_settings(camera_id: str, camera_settings: CameraSettings):
 
         return JSONResponse(response, status_code=200)
 
-
     else:
         response = {
             "created": False,
@@ -140,14 +139,15 @@ def save_camera_settings(camera_id: str, camera_settings: CameraSettings):
 def update_camera_settings(settings_data: CameraSettings, camera_id: str):
     if settings_data:
 
-        camera_settings_table.update(settings_data.model_dump(), DBQuery.camera_id == camera_id)
+        camera_settings_table.update(
+            settings_data.model_dump(), DBQuery.camera_id == camera_id
+        )
 
         response = {
             "updated": True,
         }
 
         return JSONResponse(response, status_code=status.HTTP_200_OK)
-
 
     else:
 

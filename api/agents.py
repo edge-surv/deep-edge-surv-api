@@ -20,7 +20,9 @@ executor = ThreadPoolExecutor(max_workers=4)
 
 def get_agent_status():
     if not os.path.exists(AGENT_STATUS_FILE):
-        return {"running": False}
+        return {
+            "running": False,
+        }
     with open(AGENT_STATUS_FILE, "r") as f:
         return json.load(f)
 
@@ -38,7 +40,10 @@ async def start_agent(background_tasks: BackgroundTasks):
     if status["running"]:
         return JSONResponse(
             status_code=400,
-            content={"message": "Process already running", "running": True},
+            content={
+                "message": "Process already running",
+                "running": True,
+            },
         )
 
     # Get all cameras
@@ -46,13 +51,13 @@ async def start_agent(background_tasks: BackgroundTasks):
 
     if not cameras:
         return JSONResponse(
-            content={"started": False},
+            content={
+                "started": False,
+            },
             status_code=400,
         )
 
     set_agent_status(True)
-
-    print("Started the agent")
 
     for camera in cameras:
         # create a stop flag
@@ -118,7 +123,10 @@ async def stop_agent():
     if not status["running"]:
         return JSONResponse(
             status_code=400,
-            content={"message": "Process is not running", "running": False},
+            content={
+                "message": "Process is not running",
+                "running": False,
+            },
         )
 
     set_agent_status(False)

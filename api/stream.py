@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 from fastapi import APIRouter, Response
 from starlette.responses import StreamingResponse, JSONResponse
 
@@ -13,43 +12,29 @@ streaming_router = APIRouter()
 @streaming_router.get("/{camera_id}/surveillance")
 async def live_ai_surveillance(camera_id: str):
     # get the settings for an agent
-    cameras_settings = camera_settings_table.search(DBQuery.camera_id == camera_id)[0]
+    cameras_settings = camera_settings_table.search(DBQuery.camera_id == camera_id)
 
     if len(cameras_settings) == 0:
         response = {
-            "cameras_settings": None
+            "cameras_settings": None,
         }
 
         return JSONResponse(response, status_code=200)
 
-    detection_objects = cameras_settings["detection_objects"]
-    minimum_conf = cameras_settings["minimum_confidence"]
-    surveillance_enabled = cameras_settings["enabled"]
-    # counting_enabled = settings["enable_counting"]
-    tracking_enabled = cameras_settings["enable_tracking"]
-    save_footage = cameras_settings["save_footage"]
-    zone_enabled = cameras_settings["enable_zone"]
+    single_camera_settings = cameras_settings[0]
 
-    # extract the zones for the camera
-    zone = camera_zones_table.get(DBQuery.camera_id == camera_id)
-
-    polygon_coordinates = np.array(zone["coordinates"])
-
-    # create the polygon zone and draw coordinates
-
-    # polygon_coordinates = np.array([
-    #     [1900, 1250],
-    #     [2350, 1250],
-    #     [3500, 2160],
-    #     [1250, 2160]
-    # ])
+    detection_objects = single_camera_settings["detection_objects"]
+    minimum_conf = single_camera_settings["minimum_confidence"]
+    surveillance_enabled = single_camera_settings["enabled"]
+    tracking_enabled = single_camera_settings["enable_tracking"]
+    save_footage = single_camera_settings["save_footage"]
 
     # get the cameras and extract the RTSP url
     cameras = camera_table.search(DBQuery.id == camera_id)
 
     if not cameras:
         response = {
-            'cameras': []
+            "cameras": [],
         }
         return Response(response, status_code=200)
 
@@ -59,20 +44,24 @@ async def live_ai_surveillance(camera_id: str):
     camera_url = 0
 
     # initialize the AIProcessor class
-    ai_processor = AIProcessor(detection_objects, polygon_coordinates, surveillance_enabled,
-                               minimum_conf=minimum_conf, tracking_enabled=tracking_enabled, zone_enabled=zone_enabled)
-
+    ai_processor = AIProcessor(
+        detection_objects,
+        running=surveillance_enabled,
+        minimum_conf=minimum_conf,
+        tracking_enabled=tracking_enabled,
+    )
     cap = cv2.VideoCapture(camera_url)
 
     def generate():
         frame_count = 0
 
         try:
-
             while True:
                 ret, frame = cap.read()
 
                 if not ret:
+                    if cap and cap.isOpened():
+                        cap.release()
                     break
                 # process the frame
                 frame_count += 1
@@ -82,7 +71,13 @@ async def live_ai_surveillance(camera_id: str):
                 if save_footage:
                     # save the labelled frames for logs
 
-                    save_frame(True, results["annotated_frame"], results["detected_classes"], camera_id, frame_count)
+                    save_frame(
+                        True,
+                        results["annotated_frame"],
+                        results["detected_classes"],
+                        camera_id,
+                        frame_count,
+                    )
 
                 ret, jpeg = cv2.imencode(".jpg", results["annotated_frame"])
                 if ret:
@@ -90,15 +85,23 @@ async def live_ai_surveillance(camera_id: str):
                     yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
 
         except Exception as e:
-
             if cap and cap.isOpened():
                 cap.release()
 
-                return Response({
-                    "stream": False
-                }, status_code=500)
+                return Response(
+                    {
+                        "stream": False,
+                    },
+                    status_code=400,
+                )
+        finally:
+            if cap and cap.isOpened():
+                cap.release()
 
-    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
+    return StreamingResponse(
+        generate(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
 
 
 @streaming_router.get("/{camera_id}")
@@ -107,9 +110,9 @@ def stream_camera_feed(camera_id: str):
 
     if not cameras:
         response = {
-            'cameras': []
+            "cameras": [],
         }
-        return Response(response, status_code=200)
+        return JSONResponse(response, status_code=200)
 
     camera = next(camera for camera in cameras)
 
@@ -140,8 +143,13 @@ def stream_camera_feed(camera_id: str):
             if cap and cap.isOpened():
                 cap.release()
 
-                return Response({
-                    "stream": False
-                }, status_code=500)
+                return JSONResponse(
+                    {
+                        "stream": 400,
+                    },
+                    status_code=500,
+                )
 
-    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
+    return StreamingResponse(
+        generate(), media_type="multipart/x-mixed-replace; boundary=frame"
+    )

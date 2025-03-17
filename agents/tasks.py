@@ -12,6 +12,7 @@ from ultralytics import YOLO
 
 from config import ROOT_DIR
 from utils import save_frame
+from db import logs_table
 
 
 # monitor cameras
@@ -201,4 +202,77 @@ def send_email(
         return True
     except Exception as e:
         logging.error(f"Failed to send email: {e}")
-        return False
+    return False
+
+
+# search the logs
+def search_logs(prompt: str):
+    """
+    Search for specific objects/prompts in the logs using YOLOWorld model.
+    Args:
+        prompt (str): What to search for in the logs (e.g., "person wearing red", "blue car")
+    """
+
+    # Initialize YOLOWorld model and annotators
+    model = YOLO("yolov8s-worldv2.pt")
+    model.set_classes([prompt])
+    box_annotator = sv.BoxAnnotator()
+    label_annotator = sv.LabelAnnotator()
+    SEARCH_OUTPUT_DIR = f"{ROOT_DIR}/output/images/search/logs"
+
+    # Get all logs from database
+    logs = logs_table.all()
+
+    if len(logs) < 1:
+        return {
+            "search": False,
+            "message": "No logs found",
+        }
+
+    # Extract image paths from logs
+    image_paths = []
+    for log in logs:
+        image_path = os.path.join("output/images/logs", log["filename"])
+        if os.path.exists(image_path):
+            image_paths.append(image_path)
+
+    detected_frames = []
+    frame_timestamps = []
+    output_files = []
+
+    # Process each image with YOLOWorld
+    for image_path in image_paths:
+        # convert the image to a numpy array
+        frame = cv2.imread(image_path)
+        results = model.predict(frame, conf=0.25, iou=0.45)[0]
+        # get detections from the results
+        detections = sv.Detections.from_ultralytics(results)
+
+        if len(detections) > 0:
+            # Generate labels
+            labels = [prompt] * len(detections)
+
+            # Annotate frame
+            annotated_frame = frame.copy()
+            annotated_frame = box_annotator.annotate(annotated_frame, detections)
+            annotated_frame = label_annotator.annotate(
+                annotated_frame, detections, labels=labels
+            )
+
+            # Save annotated frame
+            output_path = os.path.join(
+                SEARCH_OUTPUT_DIR, f"log_search_{os.path.basename(image_path)}"
+            )
+            # write the image to the path
+            cv2.imwrite(output_path, annotated_frame)
+
+            detected_frames.append(results)
+            frame_timestamps.append(os.path.basename(image_path))
+            output_files.append(output_path)
+
+    return {
+        "timestamps": frame_timestamps,
+        "total_detections": len(detected_frames),
+        "output_files": output_files,
+        "search": True,
+    }

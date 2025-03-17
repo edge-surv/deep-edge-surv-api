@@ -1,36 +1,28 @@
 import supervision as sv
 from ultralytics import YOLO
-from ultralytics import solutions
 
 
 class AIProcessor:
     """
-    A class that processes frames using a given model and detects objects within a specified zone.
+    A class that processes frames using a given model and detects objects.
     """
 
     def __init__(
         self,
         detection_objects,
-        polygon_coordinates,
         running=True,
         minimum_conf=0.25,
         tracking_enabled=True,
-        zone_enabled=False,
     ):
         self.model = YOLO("yolov8n.pt")
-        self.zone_enabled = zone_enabled
         self.model.fuse()
         self.detection_objects = detection_objects
         self.minimum_conf = minimum_conf
         self.tracking_enabled = tracking_enabled
-        self.polygon_zone = sv.PolygonZone(polygon=polygon_coordinates)
         self.running = running
         self.tracker = sv.ByteTrack()
         self.box_annotator = sv.BoxAnnotator()
         self.label_annotator = sv.LabelAnnotator()
-        self.zone_annotator = sv.PolygonZoneAnnotator(
-            zone=self.polygon_zone, color=sv.Color.ROBOFLOW, display_in_zone_count=False
-        )
 
     def process_frame(self, frame):
         """
@@ -42,7 +34,6 @@ class AIProcessor:
         detections = sv.Detections.from_ultralytics(results)
 
         # filter detections based on the detection objects
-
         filtered_mask = [
             class_name in self.detection_objects
             for class_name in detections["class_name"]
@@ -54,50 +45,21 @@ class AIProcessor:
             filtered_detections, self.tracker
         )
 
-        # handle when the zone is enabled
+        annotated_frame = self.box_annotator.annotate(
+            frame, detections=tracked_detections
+        )
+        annotated_frame = self.label_annotator.annotate(
+            annotated_frame, detections=tracked_detections, labels=labels
+        )
 
-        if self.zone_enabled:
-            # trigger the zone
-            self.polygon_zone.trigger(detections=filtered_detections)
-
-            # annotate frames with detections
-
-            annotated_frame = self.box_annotator.annotate(
-                frame, detections=tracked_detections
-            )
-
-            annotated_frame = self.label_annotator.annotate(
-                annotated_frame, detections=tracked_detections, labels=labels
-            )
-            annotated_frame = self.zone_annotator.annotate(annotated_frame)
-
-            return {
-                "detections": tracked_detections,
-                "labels": labels,
-                "detected_classes": [
-                    class_name for class_name in filtered_detections["class_name"]
-                ],
-                "annotated_frame": annotated_frame,
-            }
-
-        # handle no zone
-        else:
-
-            annotated_frame = self.box_annotator.annotate(
-                frame, detections=tracked_detections
-            )
-            annotated_frame = self.label_annotator.annotate(
-                annotated_frame, detections=tracked_detections, labels=labels
-            )
-
-            return {
-                "detections": tracked_detections,
-                "labels": labels,
-                "detected_classes": [
-                    class_name for class_name in filtered_detections["class_name"]
-                ],
-                "annotated_frame": annotated_frame,
-            }
+        return {
+            "detections": tracked_detections,
+            "labels": labels,
+            "detected_classes": [
+                class_name for class_name in filtered_detections["class_name"]
+            ],
+            "annotated_frame": annotated_frame,
+        }
 
     def generate_trackers(self, filtered_detections, tracker):
         """
@@ -127,7 +89,6 @@ class AIProcessor:
                 return labels, filtered_detections
 
             # return the tracked detections with labels
-
             labels = [
                 f"{class_name} #{tracker_id}"
                 for class_name, tracker_id in zip(
@@ -138,9 +99,7 @@ class AIProcessor:
             return labels, tracked_detections
 
         else:
-
             # return the filtered detections with labels if tracking is disabled
-
             labels = [
                 f"{class_name}"
                 for class_name, confidence in zip(

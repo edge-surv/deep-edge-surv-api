@@ -4,7 +4,7 @@ import os
 from config import ROOT_DIR
 from fastapi.responses import JSONResponse
 
-from agents.tasks import search_video
+from agents.tasks import search_logs, search_video
 
 search_router = APIRouter()
 
@@ -12,7 +12,7 @@ search_router = APIRouter()
 UPLOAD_DIR = os.path.join(ROOT_DIR, "uploads")
 
 
-@search_router.post("/")
+@search_router.post("/upload-search")
 async def search_items(
     file: UploadFile = File(...),
     prompt: str = None,
@@ -59,7 +59,10 @@ async def search_items(
     except Exception as e:
 
         return JSONResponse(
-            status_code=500, content={"message": f"Failed to save file: {str(e)}", }
+            status_code=500,
+            content={
+                "message": f"Failed to save file: {str(e)}",
+            },
         )
 
     # Perform search
@@ -84,10 +87,10 @@ async def search_items(
         # Construct response
         response = {
             "search": True,
+            "timestamps": results["timestamps"],
+            "total_detections": results["total_detections"],
+            "output_files": results["output_files"],
         }
-        response["timestamps"] = results["timestamps"]
-        response["total_detections"] = results["total_detections"]
-        response["output_files"] = results["output_files"]
 
         return JSONResponse(
             status_code=200,
@@ -96,7 +99,6 @@ async def search_items(
 
     except Exception as e:
 
-        print(e)
         # Clean up uploaded file if search fails
         os.unlink(file_path)
 
@@ -104,5 +106,43 @@ async def search_items(
             status_code=400,
             content={
                 "search": False,
+            },
+        )
+
+
+@search_router.post("/logs-search")
+async def search_logs_endpoint(prompt: str):
+    try:
+        results = search_logs(prompt=prompt)
+
+        # Check if search was successful
+        if results["search"] == False:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "message": "Search failed",
+                    "search": False,
+                },
+            )
+
+        # Construct response
+        response = {
+            "search": True,
+            "timestamps": results["timestamps"],
+            "total_detections": results["total_detections"],
+            "output_files": results["output_files"],
+        }
+
+        return JSONResponse(
+            status_code=200,
+            content=response,
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "search": False,
+                "message": str(e),
             },
         )
