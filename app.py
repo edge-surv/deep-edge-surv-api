@@ -10,6 +10,7 @@ from api import (
     logs_router,
     search_router,
     streaming_router,
+    notifications_router,
 )
 from db import DBQuery, users_table
 from utils import decode_access_token
@@ -64,3 +65,4 @@ app.include_router(agents_router, prefix="/api/agents")
 app.include_router(auth_router, prefix="/api/auth/users")
 app.include_router(logs_router, prefix="/api/logs")
 app.include_router(search_router, prefix="/api/search")
+app.include_router(notifications_router, prefix="/api/notifications")

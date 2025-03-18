@@ -10,6 +10,7 @@ logs_table = db.table("logs")
 agents_table = db.table("agents")
 users_table = db.table("users")
 emails_details_table = db.table("email_details")
+notifications_table = db.table("notifications")
 
 # query
 DBQuery = Query()

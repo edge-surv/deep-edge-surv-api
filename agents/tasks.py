@@ -276,3 +276,8 @@ def search_logs(prompt: str):
         "output_files": output_files,
         "search": True,
     }
+
+
+# save notifications
+def save_notification(notification_data):
+    pass

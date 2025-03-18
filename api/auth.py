@@ -140,7 +140,7 @@ def reset_password(reset_token: str, new_password: str):
             "message": "Invalid or expired reset token",
         }
 
-        return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(response, status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 # delete the user

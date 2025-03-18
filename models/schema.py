@@ -78,3 +78,10 @@ class User(BaseModel):
 class EmailDetail(BaseModel):
     id: Optional[str] = str(uuid4())
     emails: List[str]
+
+
+class Notification(BaseModel):
+    id: str = str(uuid4())
+    objects: List[str]
+    date: str
+    time: str

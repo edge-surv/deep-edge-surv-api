@@ -1,5 +1,9 @@
+from uuid import uuid4
 import supervision as sv
 from ultralytics import YOLO
+import time
+from datetime import datetime
+from db.db import notifications_table
 
 
 class AIProcessor:
@@ -23,6 +27,7 @@ class AIProcessor:
         self.tracker = sv.ByteTrack()
         self.box_annotator = sv.BoxAnnotator()
         self.label_annotator = sv.LabelAnnotator()
+        self.last_notification_time = 0
 
     def process_frame(self, frame):
         """
@@ -44,6 +49,24 @@ class AIProcessor:
         labels, tracked_detections = self.generate_trackers(
             filtered_detections, self.tracker
         )
+
+        #  notify whenever there is a detection
+        current_time = time.time()
+        if (
+            len(filtered_detections) > 0
+            and (current_time - self.last_notification_time) >= 60
+        ):
+            detected_objects = [
+                class_name for class_name in filtered_detections["class_name"]
+            ]
+            notification = {
+                "id": str(uuid4()),
+                "objects": detected_objects,
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "time": datetime.now().strftime("%H:%M:%S"),
+            }
+            notifications_table.insert(notification)
+            self.last_notification_time = current_time
 
         annotated_frame = self.box_annotator.annotate(
             frame, detections=tracked_detections

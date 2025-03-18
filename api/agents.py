@@ -73,23 +73,13 @@ async def start_agent(background_tasks: BackgroundTasks):
         surveillance_enabled = cameras_settings["enabled"]
         tracking_enabled = cameras_settings["enable_tracking"]
         save_footage = cameras_settings["save_footage"]
-        zone_enabled = cameras_settings["enable_zone"]
-
-        # Retrieve zone coordinates for the camera
-        zone = camera_zones_table.get(DBQuery.camera_id == camera["id"])
-        if not zone:
-            continue
-
-        polygon_coordinates = np.array(zone["coordinates"])
 
         # Initialize the AI processor
         ai_processor = AIProcessor(
             detection_objects,
-            polygon_coordinates,
-            surveillance_enabled,
+            running=surveillance_enabled,
             minimum_conf=minimum_conf,
             tracking_enabled=tracking_enabled,
-            zone_enabled=zone_enabled,
         )
 
         camera_url = 0  # Replace with actual camera URL generation logic
