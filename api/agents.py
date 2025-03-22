@@ -3,7 +3,7 @@ import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-import numpy as np
+
 from fastapi import APIRouter, BackgroundTasks
 from starlette.responses import JSONResponse
 
@@ -136,6 +136,18 @@ async def stop_agent():
     return JSONResponse(
         {
             "stopped": True,
+        },
+        status_code=200,
+    )
+
+
+# get agent status
+@agents_router.get("/status")
+async def get_status():
+    status = get_agent_status()
+    return JSONResponse(
+        {
+            "status": status["running"],
         },
         status_code=200,
     )

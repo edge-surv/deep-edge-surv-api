@@ -29,6 +29,24 @@ def add_camera(camera_data: Camera):
         return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
 
 
+# get a camera from the database
+@camera_router.get("/{camera_id}")
+def get_camera(camera_id: str):
+    camera = camera_table.get(DBQuery.id == camera_id)
+
+    if camera:
+        response = {
+            "camera": camera,
+        }
+        return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+    else:
+        response = {
+            "camera": None,
+        }
+        return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
+
+
 # delete camera from the database
 @camera_router.delete("/{camera_id}")
 def delete_camera(camera_id: str):

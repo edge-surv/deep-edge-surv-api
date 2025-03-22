@@ -27,6 +27,8 @@ class Camera(BaseModel):
     username: str
     password: str
     provider: str
+    status: str
+    location: str
 
 
 #  camera settings model
