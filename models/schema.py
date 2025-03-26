@@ -87,3 +87,6 @@ class Notification(BaseModel):
     objects: List[str]
     date: str
     time: str
+
+class LogsPrompt(BaseModel):
+    prompt: str

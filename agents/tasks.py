@@ -260,15 +260,17 @@ def search_logs(prompt: str):
             )
 
             # Save annotated frame
-            output_path = os.path.join(
-                SEARCH_OUTPUT_DIR, f"log_search_{os.path.basename(image_path)}"
+            output_path = (
+                f"output/images/search/logs/log_search_{os.path.basename(image_path)}"
             )
+
             # write the image to the path
             cv2.imwrite(output_path, annotated_frame)
 
             detected_frames.append(results)
+            # get the exact files
             frame_timestamps.append(os.path.basename(image_path))
-            output_files.append(output_path)
+            output_files.append(os.path.basename(output_path))
 
     return {
         "timestamps": frame_timestamps,

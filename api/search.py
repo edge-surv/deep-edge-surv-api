@@ -3,7 +3,7 @@ from uuid import uuid4
 import os
 from config import ROOT_DIR
 from fastapi.responses import JSONResponse
-
+from models import LogsPrompt
 from agents.tasks import search_logs, search_video
 
 search_router = APIRouter()
@@ -111,9 +111,9 @@ async def search_items(
 
 
 @search_router.post("/logs-search")
-async def search_logs_endpoint(prompt: str):
+async def search_logs_endpoint(prompt_data: LogsPrompt):
     try:
-        results = search_logs(prompt=prompt)
+        results = search_logs(prompt=prompt_data.prompt)
 
         # Check if search was successful
         if results["search"] == False:

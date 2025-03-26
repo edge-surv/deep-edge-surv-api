@@ -12,10 +12,11 @@ camera_router = APIRouter()
 @camera_router.post("/")
 def add_camera(camera_data: Camera):
     if camera_data:
-        camera_table.insert(camera_data.model_dump())
+        new_camera = camera_table.insert(camera_data.model_dump())
 
         response = {
             "created": True,
+            "camera_id": camera_data.id
         }
 
         return JSONResponse(response, status_code=status.HTTP_201_CREATED)
@@ -27,7 +28,6 @@ def add_camera(camera_data: Camera):
         }
 
         return JSONResponse(response, status_code=status.HTTP_400_BAD_REQUEST)
-
 
 # get a camera from the database
 @camera_router.get("/{camera_id}")
