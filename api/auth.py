@@ -1,202 +1,202 @@
-from fastapi import APIRouter, status
-from fastapi.responses import JSONResponse
+# from fastapi import APIRouter, status
+# from fastapi.responses import JSONResponse
 
-from db import DBQuery, emails_details_table, users_table
-from models import EmailDetail, User
-from utils import check_password, generate_access_token, password_hasher
-from utils.helper import decode_access_token
+# from db import DBQuery, emails_details_table, users_table
+# from models import EmailDetail, User
+# from utils import check_password, generate_access_token, password_hasher
+# from utils.helper import decode_access_token
 
-auth_router = APIRouter()
-
-
-@auth_router.post("/login")
-def login(login_data: User):
-    if login_data:
-        # check if user exists
-        user = users_table.search(DBQuery.email == login_data.email)
-
-        if user:
-            user = user[0]
-
-            password_correct = check_password(login_data.password, user["password"])
-
-            if password_correct:
-                payload = {
-                    "id": user["id"],
-                    "email": user["email"],
-                }
-
-                # create access token
-                access_token = generate_access_token(payload)
-
-                response = {
-                    "login": True,
-                    "access_token": access_token,
-                    "message": "Login successful",
-                }
-
-                return JSONResponse(response, status_code=status.HTTP_200_OK)
-
-        else:
-            response = {
-                "login": False,
-                "message": "User does not exist",
-            }
-
-            return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
-
-    else:
-        response = {
-            "login": False,
-            "message": "Invalid login credentials",
-        }
-
-        return JSONResponse(response, status_code=status.HTTP_401_UNAUTHORIZED)
+# auth_router = APIRouter()
 
 
-# create account
-@auth_router.post("/sign-up")
-def signup(sign_up_data: User):
-    if sign_up_data:
-        # check if user exists
-        user = users_table.search(DBQuery.email == sign_up_data.email)
+# @auth_router.post("/login")
+# def login(login_data: User):
+#     if login_data:
+#         # check if user exists
+#         user = users_table.search(DBQuery.email == login_data.email)
 
-        if user:
-            response = {
-                "created": False,
-                "message": "User already exists",
-            }
+#         if user:
+#             user = user[0]
 
-            return JSONResponse(response, status_code=status.HTTP_409_CONFLICT)
+#             password_correct = check_password(login_data.password, user["password"])
 
-        else:
-            # hash the password
-            sign_up_data.password = password_hasher(sign_up_data.password)
+#             if password_correct:
+#                 payload = {
+#                     "id": user["id"],
+#                     "email": user["email"],
+#                 }
 
-            users_table.insert(sign_up_data.model_dump())
+#                 # create access token
+#                 access_token = generate_access_token(payload)
 
-            response = {
-                "created": True,
-                "message": "User created successfully",
-            }
+#                 response = {
+#                     "login": True,
+#                     "access_token": access_token,
+#                     "message": "Login successful",
+#                 }
 
-            return JSONResponse(response, status_code=status.HTTP_201_CREATED)
+#                 return JSONResponse(response, status_code=status.HTTP_200_OK)
 
+#         else:
+#             response = {
+#                 "login": False,
+#                 "message": "User does not exist",
+#             }
 
-@auth_router.post("/forgot-password")
-def forgot_password(email: str):
-    # check if user exists
-    user = users_table.search(DBQuery.email == email)
+#             return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
 
-    if user:
-        user = user[0]
-        payload = {
-            "id": user["id"],
-            "email": user["email"],
-        }
+#     else:
+#         response = {
+#             "login": False,
+#             "message": "Invalid login credentials",
+#         }
 
-        # create reset token
-        reset_token = generate_access_token(payload)
-
-        response = {
-            "success": True,
-            "reset_token": reset_token,
-            "message": "Password reset link sent to email",
-        }
-
-        return JSONResponse(response, status_code=status.HTTP_200_OK)
-
-    response = {
-        "success": False,
-        "message": "User with this email does not exist",
-    }
-
-    return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
+#         return JSONResponse(response, status_code=status.HTTP_401_UNAUTHORIZED)
 
 
-@auth_router.post("/reset-password")
-def reset_password(reset_token: str, new_password: str):
-    # Verify reset token and get user
-    try:
-        payload = decode_access_token(reset_token)
-        user = users_table.search(DBQuery.id == payload["id"])
+# # create account
+# @auth_router.post("/sign-up")
+# def signup(sign_up_data: User):
+#     if sign_up_data:
+#         # check if user exists
+#         user = users_table.search(DBQuery.email == sign_up_data.email)
 
-        if user:
-            user = user[0]
-            # Update password
-            hashed_password = password_hasher(new_password)
-            users_table.update({"password": hashed_password}, DBQuery.id == user["id"])
+#         if user:
+#             response = {
+#                 "created": False,
+#                 "message": "User already exists",
+#             }
 
-            response = {
-                "success": True,
-                "message": "Password reset successful",
-            }
+#             return JSONResponse(response, status_code=status.HTTP_409_CONFLICT)
 
-            return JSONResponse(response, status_code=status.HTTP_200_OK)
+#         else:
+#             # hash the password
+#             sign_up_data.password = password_hasher(sign_up_data.password)
 
-    except:
-        response = {
-            "success": False,
-            "message": "Invalid or expired reset token",
-        }
+#             users_table.insert(sign_up_data.model_dump())
 
-        return JSONResponse(response, status_code=status.HTTP_401_UNAUTHORIZED)
+#             response = {
+#                 "created": True,
+#                 "message": "User created successfully",
+#             }
 
-
-# delete the user
-@auth_router.delete("/{user_id}")
-def delete_user(user_id: str):
-    users_table.remove(DBQuery.id == user_id)
-
-    response = {
-        "deleted": True,
-    }
-
-    return JSONResponse(response, status_code=status.HTTP_200_OK)
+#             return JSONResponse(response, status_code=status.HTTP_201_CREATED)
 
 
-@auth_router.get("")
-def get_users():
-    users = users_table.all()
+# @auth_router.post("/forgot-password")
+# def forgot_password(email: str):
+#     # check if user exists
+#     user = users_table.search(DBQuery.email == email)
 
-    response = {
-        "users": users,
-    }
+#     if user:
+#         user = user[0]
+#         payload = {
+#             "id": user["id"],
+#             "email": user["email"],
+#         }
 
-    return JSONResponse(response, status_code=status.HTTP_200_OK)
+#         # create reset token
+#         reset_token = generate_access_token(payload)
 
+#         response = {
+#             "success": True,
+#             "reset_token": reset_token,
+#             "message": "Password reset link sent to email",
+#         }
 
-@auth_router.post("/emails")
-def create_email_details(email_data: EmailDetail):
-    if email_data:
-        # insert the emails for configuration
-        emails_details_table.insert(email_data.model_dump())
+#         return JSONResponse(response, status_code=status.HTTP_200_OK)
 
-        return JSONResponse(
-            {
-                "message": "Emails added successfully",
-                "created": True,
-            },
-            status_code=status.HTTP_201_CREATED,
-        )
+#     response = {
+#         "success": False,
+#         "message": "User with this email does not exist",
+#     }
 
-    else:
-        return JSONResponse(
-            {
-                "message": "Invalid email data",
-                "created": False,
-            },
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+#     return JSONResponse(response, status_code=status.HTTP_404_NOT_FOUND)
 
 
-@auth_router.get("/emails")
-def get_email_details():
-    email_details = emails_details_table.all()
+# @auth_router.post("/reset-password")
+# def reset_password(reset_token: str, new_password: str):
+#     # Verify reset token and get user
+#     try:
+#         payload = decode_access_token(reset_token)
+#         user = users_table.search(DBQuery.id == payload["id"])
 
-    return JSONResponse(
-        {
-            "emails": email_details,
-        },
-        status_code=status.HTTP_200_OK,
-    )
+#         if user:
+#             user = user[0]
+#             # Update password
+#             hashed_password = password_hasher(new_password)
+#             users_table.update({"password": hashed_password}, DBQuery.id == user["id"])
+
+#             response = {
+#                 "success": True,
+#                 "message": "Password reset successful",
+#             }
+
+#             return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+#     except:
+#         response = {
+#             "success": False,
+#             "message": "Invalid or expired reset token",
+#         }
+
+#         return JSONResponse(response, status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+# # delete the user
+# @auth_router.delete("/{user_id}")
+# def delete_user(user_id: str):
+#     users_table.remove(DBQuery.id == user_id)
+
+#     response = {
+#         "deleted": True,
+#     }
+
+#     return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+
+# @auth_router.get("")
+# def get_users():
+#     users = users_table.all()
+
+#     response = {
+#         "users": users,
+#     }
+
+#     return JSONResponse(response, status_code=status.HTTP_200_OK)
+
+
+# @auth_router.post("/emails")
+# def create_email_details(email_data: EmailDetail):
+#     if email_data:
+#         # insert the emails for configuration
+#         emails_details_table.insert(email_data.model_dump())
+
+#         return JSONResponse(
+#             {
+#                 "message": "Emails added successfully",
+#                 "created": True,
+#             },
+#             status_code=status.HTTP_201_CREATED,
+#         )
+
+#     else:
+#         return JSONResponse(
+#             {
+#                 "message": "Invalid email data",
+#                 "created": False,
+#             },
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#         )
+
+
+# @auth_router.get("/emails")
+# def get_email_details():
+#     email_details = emails_details_table.all()
+
+#     return JSONResponse(
+#         {
+#             "emails": email_details,
+#         },
+#         status_code=status.HTTP_200_OK,
+#     )

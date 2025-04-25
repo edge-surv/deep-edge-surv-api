@@ -1,19 +1,9 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
-from starlette.staticfiles import StaticFiles
 
-from api import (
-    agents_router,
-    auth_router,
-    camera_router,
-    logs_router,
-    search_router,
-    streaming_router,
-    notifications_router,
-)
-from db import DBQuery, users_table
-from utils import decode_access_token
+
+from api import search_router
+
 
 app = FastAPI()
 
@@ -26,43 +16,43 @@ app.add_middleware(
 )
 
 
-async def check_authorization(request: Request, call_next):
-    response = await call_next(request)
+# async def check_authorization(request: Request, call_next):
+#     response = await call_next(request)
 
-    auth_token = request.headers.get("Authorization")
+#     auth_token = request.headers.get("Authorization")
 
-    # decode the token
+#     # decode the token
 
-    decoded_token = decode_access_token(auth_token)
+#     decoded_token = decode_access_token(auth_token)
 
-    if decoded_token is None:
-        response = {
-            "authorized": False,
-        }
+#     if decoded_token is None:
+#         response = {
+#             "authorized": False,
+#         }
 
-        return JSONResponse(response, status_code=401)
+#         return JSONResponse(response, status_code=401)
 
-    user = users_table.search(DBQuery.id == decoded_token["id"])
+#     user = users_table.search(DBQuery.id == decoded_token["id"])
 
-    if user:
+#     if user:
 
-        return response
+#         return response
 
-    else:
+#     else:
 
-        response = {
-            "authorized": False,
-        }
+#         response = {
+#             "authorized": False,
+#         }
 
-        return JSONResponse(response, status_code=401)
+#         return JSONResponse(response, status_code=401)
 
 
-# static files config
-app.mount("/output", StaticFiles(directory="output"), name="output")
-app.include_router(camera_router, prefix="/api/cameras")
-app.include_router(streaming_router, prefix="/api/streams")
-app.include_router(agents_router, prefix="/api/agents")
-app.include_router(auth_router, prefix="/api/auth/users")
-app.include_router(logs_router, prefix="/api/logs")
+# # static files config
+# app.mount("/output", StaticFiles(directory="output"), name="output")
+# app.include_router(camera_router, prefix="/api/cameras")
+# app.include_router(streaming_router, prefix="/api/streams")
+# app.include_router(agents_router, prefix="/api/agents")
+# app.include_router(auth_router, prefix="/api/auth/users")
+# app.include_router(logs_router, prefix="/api/logs")
 app.include_router(search_router, prefix="/api/search")
-app.include_router(notifications_router, prefix="/api/notifications")
+# app.include_router(notifications_router, prefix="/api/notifications")
