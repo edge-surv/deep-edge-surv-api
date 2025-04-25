@@ -1,148 +1,83 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, File, UploadFile, Form
 from uuid import uuid4
 import os
-from config import ROOT_DIR
 from fastapi.responses import JSONResponse
-from models import LogsPrompt
-from agents.tasks import search_logs, search_video
+from config import ROOT_DIR
+from utils.s3 import save_uploaded_file
+from test import detect_objects
+from models import UploadSearchRequest
 
 search_router = APIRouter()
 
 
-UPLOAD_DIR = os.path.join(ROOT_DIR, "uploads")
+UPLOAD_DIR = os.path.join(ROOT_DIR, "s3", "videos")
 
 
 @search_router.post("/upload-search")
 async def search_items(
+    prompt: str = Form(...),
+    confidence: float = Form(0.25),
+    save_output: bool = Form(True),
     file: UploadFile = File(...),
-    prompt: str = None,
-    confidence: float = 0.25,
-    save_output: bool = True,
 ):
     """
     Upload a video and search for objects within it using YOLOWorld model.
-
-    Args:
-        file: The video file to analyze
-        prompt: What to search for (e.g., "person wearing red", "blue car")
-        confidence: Detection confidence threshold
-        save_output: Whether to save the annotated video
     """
-    if not file:
+    if not file or not prompt:
         return JSONResponse(
             status_code=400,
             content={
-                "message": "No file uploaded",
-                "file": False,
+                "message": "Missing file or prompt",
+                "success": False,
             },
         )
 
-    if not prompt:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "message": "No search prompt provided",
-                "prompt": False,
-            },
-        )
-
-    # Generate unique filename
+    # Generate unique filename and save uploaded file
     file_extension = os.path.splitext(file.filename)[1]
     unique_filename = f"{uuid4()}{file_extension}"
     file_path = f"{UPLOAD_DIR}/{unique_filename}"
 
-    # Save uploaded file
     try:
-        with open(file_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
-    except Exception as e:
+        # Save uploaded file locally
+        content = await file.read()
 
-        return JSONResponse(
-            status_code=500,
-            content={
-                "message": f"Failed to save file: {str(e)}",
-            },
+        # Save to local storage and get URL
+        video_url = save_uploaded_file(content, unique_filename, "videos")
+
+        # Perform detection
+        results = detect_objects(
+            prompt=prompt, video_path=file_path, confidence=confidence
         )
 
-    # Perform search
-    try:
-        results = search_video(
-            prompt=prompt,
-            source_video=str(file_path),
-            confidence=confidence,
-            save_output=save_output,
-        )
+        # Save detected frames to local storage
+        frame_urls = []
+        for frame in results["frames"]:
+            # Save each frame to local storage with type "frames"
+            frame_url = save_uploaded_file(frame["data"], frame["name"], "frames")
+            frame_urls.append(frame_url)
 
-        # Check if search was successful
-        if results["search"] == False:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "message": "Search failed",
-                    "search": False,
-                },
-            )
-
-        # Construct response
-        response = {
-            "search": True,
-            "timestamps": results["timestamps"],
-            "total_detections": results["total_detections"],
-            "output_files": results["output_files"],
-        }
+        # Clean up temporary file
+        if os.path.exists(file_path):
+            os.unlink(file_path)
 
         return JSONResponse(
             status_code=200,
-            content=response,
+            content={
+                "success": True,
+                "original_video_url": video_url,
+                "detected_image_urls": frame_urls,
+                "total_detections": results["total_detections"],
+            },
         )
 
     except Exception as e:
-
-        # Clean up uploaded file if search fails
-        os.unlink(file_path)
+        if os.path.exists(file_path):
+            os.unlink(file_path)
 
         return JSONResponse(
             status_code=400,
             content={
-                "search": False,
-            },
-        )
-
-
-@search_router.post("/logs-search")
-async def search_logs_endpoint(prompt_data: LogsPrompt):
-    try:
-        results = search_logs(prompt=prompt_data.prompt)
-
-        # Check if search was successful
-        if results["search"] == False:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "message": "Search failed",
-                    "search": False,
-                },
-            )
-
-        # Construct response
-        response = {
-            "search": True,
-            "timestamps": results["timestamps"],
-            "total_detections": results["total_detections"],
-            "output_files": results["output_files"],
-        }
-
-        return JSONResponse(
-            status_code=200,
-            content=response,
-        )
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "search": False,
+                "success": False,
                 "message": str(e),
             },
         )

@@ -88,5 +88,12 @@ class Notification(BaseModel):
     date: str
     time: str
 
+
 class LogsPrompt(BaseModel):
     prompt: str
+
+
+class UploadSearchRequest(BaseModel):
+    prompt: str = None
+    confidence: float = 0.25
+    save_output: bool = True
