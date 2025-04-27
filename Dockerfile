@@ -13,7 +13,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # install git
-RUN apt install git
+RUN apt-get update && apt-get install -y git
+
 
 # Upgrade pip
 RUN pip install --upgrade pip
