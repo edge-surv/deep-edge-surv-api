@@ -9,14 +9,14 @@ RUN mkdir -p ${DOCKER_HOME}
 WORKDIR ${DOCKER_HOME}
 
 # Python environment variables
-ENV PYTHONDONOTWRITEBYTECODE=1
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Upgrade pip
 RUN pip install --upgrade pip
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y 
+RUN apt-get update && apt-get install -y \
     libgl1 \
     gcc \
     python3-dev \
@@ -26,21 +26,22 @@ RUN apt-get update && apt-get install -y
     libglib2.0-0 \
     libsm6 \
     libxrender1 \
-    libxext6 \
+    libxext6 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements.txt first to leverage Docker cache
 COPY requirements.txt ${DOCKER_HOME}/
 
 # Install Python dependencies
-RUN pip install --no-cache-dir ulytralytics supervision "fastapi[standard]" 
-RUN pip install git+https://github.com/openai/CLIP.git
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir ultralytics supervision "fastapi[standard]" 
+RUN pip install --no-cache-dir git+https://github.com/openai/CLIP.git
 
 # Copy the rest of the application code
 COPY . ${DOCKER_HOME}/
 
-# Expose ports for FastAPI
-EXPOSE 9000 
+# Expose port for FastAPI
+EXPOSE 9000
 
-# Start Mosquitto and run the FastAPI app
-CMD fastapi run app.py --host 0.0.0.0 --port 9000
+# Start the FastAPI app
+CMD ["fastapi", "run", "app.py", "--host", "0.0.0.0", "--port", "9000"]
