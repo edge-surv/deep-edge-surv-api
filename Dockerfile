@@ -12,6 +12,9 @@ WORKDIR ${DOCKER_HOME}
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# install git
+RUN apt install git
+
 # Upgrade pip
 RUN pip install --upgrade pip
 
