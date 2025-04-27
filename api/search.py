@@ -5,7 +5,6 @@ from fastapi.responses import JSONResponse
 from config import ROOT_DIR
 from utils.s3 import save_uploaded_file
 from test import detect_objects
-from models import UploadSearchRequest
 
 search_router = APIRouter()
 
@@ -17,7 +16,6 @@ UPLOAD_DIR = os.path.join(ROOT_DIR, "s3", "videos")
 async def search_items(
     prompt: str = Form(...),
     confidence: float = Form(0.25),
-    save_output: bool = Form(True),
     file: UploadFile = File(...),
 ):
     """

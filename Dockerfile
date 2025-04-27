@@ -16,8 +16,7 @@ ENV PYTHONUNBUFFERED=1
 RUN pip install --upgrade pip
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    nmap \
+RUN apt-get update && apt-get install -y 
     libgl1 \
     gcc \
     python3-dev \
@@ -28,26 +27,20 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxrender1 \
     libxext6 \
-    mosquitto \
-    mosquitto-clients && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements.txt first to leverage Docker cache
 COPY requirements.txt ${DOCKER_HOME}/
 
-RUN mkdir logs
-
-RUN cd logs
-
-RUN mkdir images
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir ulytralytics supervision "fastapi[standard]" 
+RUN pip install git+https://github.com/openai/CLIP.git
 
 # Copy the rest of the application code
 COPY . ${DOCKER_HOME}/
 
-# Expose ports for FastAPI and Mosquitto
-EXPOSE 8000 1883
+# Expose ports for FastAPI
+EXPOSE 9000 
 
 # Start Mosquitto and run the FastAPI app
-CMD fastapi run app.py --host 0.0.0.0 --port 8000
+CMD fastapi run app.py --host 0.0.0.0 --port 9000
